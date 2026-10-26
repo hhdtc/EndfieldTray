@@ -12,7 +12,7 @@ Item {
     signal hoveredChanged(bool hovered)
     signal clicked()
 
-    width: 80
+    width: 38
     height: 32
 
     HoverHandler {
@@ -23,40 +23,36 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 9
-        color: root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
-                           : (hover.hovered ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.055) : "transparent")
+        color: root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.12)
+                           : (hover.hovered ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.07) : "transparent")
         border.width: root.active ? 1 : 0
-        border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.3)
+        border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.34)
     }
 
-    Row {
+    Kirigami.Icon {
         anchors.centerIn: parent
-        spacing: 4
+        width: 16
+        height: 16
+        source: root.appIcon ? root.appIcon : "application-x-executable"
+    }
 
-        Kirigami.Icon {
-            width: 14
-            height: 14
-            source: root.appIcon ? root.appIcon : "application-x-executable"
-            anchors.verticalCenter: parent.verticalCenter
-        }
-
-        Text {
-            width: Math.max(0, root.width - 30)
-            text: root.appName
-            color: root.active ? Theme.accent : Theme.textDim
-            font.family: Theme.cjk
-            font.pixelSize: 8
-            elide: Text.ElideRight
-            anchors.verticalCenter: parent.verticalCenter
-        }
+    Rectangle {
+        visible: root.windowCount > 1
+        width: 12
+        height: 11
+        radius: 5
+        color: Theme.badgeDark
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: 1
+        anchors.bottomMargin: 1
 
         Text {
-            visible: root.windowCount > 1
+            anchors.centerIn: parent
             text: root.windowCount
             color: Theme.accent
             font.family: Theme.mono
-            font.pixelSize: 7
-            anchors.verticalCenter: parent.verticalCenter
+            font.pixelSize: 6
         }
     }
 

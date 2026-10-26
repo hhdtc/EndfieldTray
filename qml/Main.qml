@@ -176,9 +176,12 @@ QW.Window {
     }
 
     function updateInputRegion() {
-        const barRect = Qt.rect(bar.x, bar.y, bar.width, bar.height)
+        const finalWidth = barExpanded ? expandedWidth : collapsedWidth
+        const barX = (screenW - finalWidth) / 2
+        const barY = height - barHeight - bottomGap
+        const barRect = Qt.rect(barX, barY, finalWidth, barHeight)
         const popupRect = groupPopupVisible
-            ? Qt.rect(bar.x + groupPopupX, bar.y - groupPopupHeight - 8,
+            ? Qt.rect(barX + groupPopupX, barY - groupPopupHeight - 8,
                       groupPopupWidth, groupPopupHeight + 8)
             : Qt.rect(0, 0, 0, 0)
         InputRegion.apply(barRect, popupRect, overlay)
@@ -217,6 +220,8 @@ QW.Window {
     }
 
     onBarExpandedChanged: {
+        System.setUiActive(root.barExpanded)
+        TrayModel.setActive(root.barExpanded)
         updateInputRegion()
         Qt.callLater(updateInputRegion)
     }
@@ -253,7 +258,7 @@ QW.Window {
 
     Timer {
         id: clockTimer
-        interval: 15000
+        interval: 30000
         running: true
         repeat: true
         onTriggered: root.updateClock()
@@ -287,7 +292,8 @@ QW.Window {
 
     Component.onCompleted: {
         updateClock()
-        System.refreshAll()
+        System.setUiActive(root.barExpanded)
+        TrayModel.setActive(root.barExpanded)
         updateInputRegion()
         if (App.previewPanel && App.previewPanel.length > 0) {
             const preview = App.previewPanel
@@ -329,7 +335,7 @@ QW.Window {
 
     Rectangle {
         anchors.fill: parent
-        color: "#44020705"
+        color: "#33191717"
         opacity: root.overlay ? 1 : 0
         visible: opacity > 0
         z: 1
@@ -353,6 +359,10 @@ QW.Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.height - root.barHeight - root.bottomGap
         z: 20
+
+        Behavior on width {
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
 
         HoverHandler {
             id: barHover
@@ -453,7 +463,7 @@ QW.Window {
                         required property var model
 
                         visible: index < 3
-                        width: visible ? 80 : 0
+                        width: visible ? 38 : 0
                         appName: model.appName
                         appIcon: model.icon
                         windowCount: model.windowCount

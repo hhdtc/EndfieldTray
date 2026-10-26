@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QAbstractListModel>
+
+class QTimer;
 #include <QList>
 
 /**
@@ -38,6 +40,7 @@ public:
 
     Q_INVOKABLE QString serviceAt(int row) const;
     Q_INVOKABLE void refresh();
+    Q_INVOKABLE void setActive(bool active);
 
 Q_SIGNALS:
     void countChanged();
@@ -68,4 +71,5 @@ private Q_SLOTS:
 
 private:
     QList<Item> m_items;
+    QTimer *m_refreshTimer = nullptr;
 };

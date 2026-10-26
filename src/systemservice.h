@@ -85,6 +85,7 @@ public:
     QString audioSinkDescription() const { return m_audioSinkDescription; }
 
     Q_INVOKABLE void refreshAll();
+    Q_INVOKABLE void setUiActive(bool active);
     Q_INVOKABLE void refreshNetworks();
     Q_INVOKABLE void refreshPowerProfile();
     Q_INVOKABLE void setPowerProfile(const QString &profile);
@@ -134,6 +135,8 @@ private:
     QTimer m_audioTimer;
     QTimer m_netTimer;
     QTimer m_batteryTimer;
+    bool m_uiActive = false;
+    bool m_uiInitialized = false;
     QTimer m_volumeApplyTimer;
     QProcess *m_audioProcess = nullptr;
     QProcess *m_netProcess = nullptr;

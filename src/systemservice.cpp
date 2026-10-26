@@ -106,29 +106,19 @@ SystemService::SystemService(QObject *parent)
     m_wifiAvailable = !QStandardPaths::findExecutable(QStringLiteral("nmcli")).isEmpty();
     m_powerProfileAvailable = !QStandardPaths::findExecutable(QStringLiteral("powerprofilesctl")).isEmpty();
 
-    m_audioTimer.setInterval(2000);
+    m_audioTimer.setInterval(3000);
     connect(&m_audioTimer, &QTimer::timeout, this, &SystemService::pollAudio);
-    m_audioTimer.start();
 
-    m_netTimer.setInterval(20000);
+    m_netTimer.setInterval(30000);
     connect(&m_netTimer, &QTimer::timeout, this, &SystemService::pollNetwork);
-    m_netTimer.start();
 
-    m_batteryTimer.setInterval(30000);
+    m_batteryTimer.setInterval(60000);
     connect(&m_batteryTimer, &QTimer::timeout, this, &SystemService::pollBattery);
-    m_batteryTimer.start();
 
     m_volumeApplyTimer.setSingleShot(true);
     m_volumeApplyTimer.setInterval(55);
     connect(&m_volumeApplyTimer, &QTimer::timeout, this, &SystemService::applyVolume);
 
-    QTimer::singleShot(150, this, [this] {
-        pollAudio();
-        pollNetwork();
-        pollBattery();
-        refreshPowerProfile();
-        refreshAudioSinks();
-    });
 }
 
 QString SystemService::userName() const
@@ -149,6 +139,33 @@ void SystemService::refreshAll()
     refreshNetworks();
     refreshPowerProfile();
     refreshAudioSinks();
+}
+
+void SystemService::setUiActive(bool active)
+{
+    m_uiActive = active;
+
+    if (active) {
+        m_audioTimer.start();
+        m_netTimer.start();
+        m_batteryTimer.start();
+        pollAudio();
+        pollNetwork();
+        pollBattery();
+    } else {
+        m_audioTimer.stop();
+        m_netTimer.stop();
+        m_batteryTimer.stop();
+    }
+
+    // Fill the first frame even while the bar starts collapsed; after this
+    // one-shot fetch the timers stay quiet until the user hovers again.
+    if (!m_uiInitialized) {
+        m_uiInitialized = true;
+        pollAudio();
+        pollNetwork();
+        pollBattery();
+    }
 }
 
 void SystemService::run(const QString &program,
@@ -572,11 +589,14 @@ void SystemService::pollBattery()
                 energyFull = readNumberFile(base + QStringLiteral("/charge_full"));
                 powerNow = readNumberFile(base + QStringLiteral("/current_now"));
             }
-            if (powerNow > 0 && energyNow > 0) {
+            const bool discharging = status.compare(QLatin1String("Discharging"), Qt::CaseInsensitive) == 0;
+            if (powerNow > 0 && energyNow > 0 && (charging || discharging)) {
                 const qint64 remaining = charging ? qMax<qint64>(0, energyFull - energyNow) : energyNow;
                 const double hours = static_cast<double>(remaining) / static_cast<double>(powerNow);
                 const int totalMinutes = qRound(hours * 60.0);
-                time = QStringLiteral("%1H %2M").arg(totalMinutes / 60).arg(totalMinutes % 60, 2, 10, QLatin1Char('0'));
+                if (totalMinutes >= 0 && totalMinutes < 100 * 60) {
+                    time = QStringLiteral("%1H %2M").arg(totalMinutes / 60).arg(totalMinutes % 60, 2, 10, QLatin1Char('0'));
+                }
             }
 
             const qint64 design = readNumberFile(base + QStringLiteral("/energy_full_design"));

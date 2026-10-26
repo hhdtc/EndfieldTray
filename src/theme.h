@@ -31,6 +31,7 @@ class Theme : public QObject
     Q_PROPERTY(QColor warning READ warning CONSTANT)
     Q_PROPERTY(QColor danger READ danger CONSTANT)
     Q_PROPERTY(QColor ok READ ok CONSTANT)
+    Q_PROPERTY(QColor badgeDark READ badgeDark CONSTANT)
     Q_PROPERTY(QString sans READ sans CONSTANT)
     Q_PROPERTY(QString mono READ mono CONSTANT)
     Q_PROPERTY(QString cjk READ cjk CONSTANT)
@@ -40,28 +41,29 @@ class Theme : public QObject
 public:
     explicit Theme(QObject *parent = nullptr);
 
-    QColor bg() const { return QColor(QStringLiteral("#080b09")); }
-    QColor panel() const { return QColor(QStringLiteral("#0d120e")); }
-    QColor panelAlt() const { return QColor(QStringLiteral("#111811")); }
-    QColor surface() const { return QColor(QStringLiteral("#172017")); }
-    QColor surfaceHot() const { return QColor(QStringLiteral("#1d2a1c")); }
-    QColor line() const { return QColor(QStringLiteral("#283426")); }
-    QColor lineBright() const { return QColor(QStringLiteral("#465642")); }
-    QColor accent() const { return QColor(QStringLiteral("#d8fb4e")); }
-    QColor accentSoft() const { return QColor(QStringLiteral("#a9c53c")); }
-    QColor accentDim() const { return QColor(QStringLiteral("#6f842b")); }
-    QColor text() const { return QColor(QStringLiteral("#edf2e7")); }
-    QColor textDim() const { return QColor(QStringLiteral("#9ba795")); }
-    QColor textFaint() const { return QColor(QStringLiteral("#5d6a58")); }
-    QColor warning() const { return QColor(QStringLiteral("#ffb454")); }
-    QColor danger() const { return QColor(QStringLiteral("#ff6659")); }
-    QColor ok() const { return QColor(QStringLiteral("#9fe36a")); }
+    QColor bg() const { return QColor(QStringLiteral("#141313")); }
+    QColor panel() const { return QColor(QStringLiteral("#312f30")); }
+    QColor panelAlt() const { return QColor(QStringLiteral("#242223")); }
+    QColor surface() const { return QColor(QStringLiteral("#3a3738")); }
+    QColor surfaceHot() const { return QColor(QStringLiteral("#464243")); }
+    QColor line() const { return QColor(QStringLiteral("#4a4647")); }
+    QColor lineBright() const { return QColor(QStringLiteral("#625d5e")); }
+    QColor accent() const { return QColor(QStringLiteral("#c8cc4d")); }
+    QColor accentSoft() const { return QColor(QStringLiteral("#aeb23f")); }
+    QColor accentDim() const { return QColor(QStringLiteral("#7a7e2e")); }
+    QColor text() const { return QColor(QStringLiteral("#f2f0ed")); }
+    QColor textDim() const { return QColor(QStringLiteral("#b6b1ae")); }
+    QColor textFaint() const { return QColor(QStringLiteral("#807a7b")); }
+    QColor warning() const { return QColor(QStringLiteral("#e7aa5a")); }
+    QColor danger() const { return QColor(QStringLiteral("#e56f66")); }
+    QColor ok() const { return QColor(QStringLiteral("#a9c46a")); }
+    QColor badgeDark() const { return QColor(QStringLiteral("#262425")); }
 
     QString sans() const { return m_sans; }
     QString mono() const { return m_mono; }
     QString cjk() const { return m_cjk; }
     int barHeight() const { return 44; }
-    int barWidth() const { return 700; }
+    int barWidth() const { return 620; }
 
     void setLoadedFamilies(const QStringList &families);
 

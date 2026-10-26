@@ -13,6 +13,10 @@ BasePanel {
     visible: isActive
 
     property bool isActive: false
+    onIsActiveChanged: {
+        if (isActive)
+            System.refreshPowerProfile()
+    }
     readonly property real fraction: System.batteryPercent / 100.0
     readonly property color levelColor: System.batteryPercent <= 18 ? Theme.danger : (System.charging ? Theme.accent : Theme.text)
 

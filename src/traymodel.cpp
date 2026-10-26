@@ -80,10 +80,9 @@ TrayModel::TrayModel(QObject *parent)
                 SLOT(onItemUnregistered(QString)));
 
     readAllItems();
-    auto *refreshTimer = new QTimer(this);
-    refreshTimer->setInterval(15000);
-    connect(refreshTimer, &QTimer::timeout, this, &TrayModel::refresh);
-    refreshTimer->start();
+    m_refreshTimer = new QTimer(this);
+    m_refreshTimer->setInterval(30000);
+    connect(m_refreshTimer, &QTimer::timeout, this, &TrayModel::refresh);
 }
 
 int TrayModel::count() const
@@ -264,6 +263,19 @@ void TrayModel::refreshItem(const QString &service)
     }
 
     Q_EMIT dataChanged(index(row, 0), index(row, 0));
+}
+
+void TrayModel::setActive(bool active)
+{
+    if (!m_refreshTimer) {
+        return;
+    }
+    if (active) {
+        refresh();
+        m_refreshTimer->start();
+    } else {
+        m_refreshTimer->stop();
+    }
 }
 
 void TrayModel::refresh()
