@@ -84,8 +84,24 @@ QHash<int, QByteArray> RecentAppsModel::roleNames() const
 
 void RecentAppsModel::scheduleRebuild()
 {
+    if (!m_active) {
+        return;
+    }
     if (!m_rebuildTimer.isActive()) {
         m_rebuildTimer.start();
+    }
+}
+
+void RecentAppsModel::setActive(bool active)
+{
+    if (m_active == active) {
+        return;
+    }
+    m_active = active;
+    if (active) {
+        rebuild();
+    } else {
+        m_rebuildTimer.stop();
     }
 }
 

@@ -38,6 +38,7 @@ public:
 
     Q_INVOKABLE void activateWindow(int groupIndex, int windowIndex);
     Q_INVOKABLE void bumpApp(const QString &appId);
+    Q_INVOKABLE void setActive(bool active);
     Q_INVOKABLE QVariantMap groupAt(int groupIndex) const;
 
 Q_SIGNALS:
@@ -67,5 +68,6 @@ private:
     QHash<QString, int> m_recency;
     QString m_lastActiveApp;
     int m_sequence = 0;
+    bool m_active = true;
     QTimer m_rebuildTimer;
 };

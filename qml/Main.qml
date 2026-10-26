@@ -223,6 +223,7 @@ QW.Window {
     onBarExpandedChanged: {
         System.setUiActive(root.barExpanded)
         TrayModel.setActive(root.barExpanded)
+        RecentApps.setActive(root.barExpanded)
         updateInputRegion()
         Qt.callLater(updateInputRegion)
     }
@@ -311,6 +312,7 @@ QW.Window {
         updateClock()
         System.setUiActive(root.barExpanded)
         TrayModel.setActive(root.barExpanded)
+        RecentApps.setActive(root.barExpanded)
         updateInputRegion()
         if (App.previewPanel && App.previewPanel.length > 0) {
             const preview = App.previewPanel
