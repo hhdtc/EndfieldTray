@@ -31,6 +31,8 @@ QW.Window {
     property bool barExpanded: false
     property string activePanel: ""
     property real panelX: 0
+    property rect panelInputRect: Qt.rect(0, 0, 0, 0)
+    property bool keyboardRequested: false
 
     property string trayService: ""
     property var trayItems: []
@@ -84,7 +86,7 @@ QW.Window {
     LayerShell.Window.scope: "dock"
     LayerShell.Window.activateOnShow: false
     LayerShell.Window.wantsToBeOnActiveScreen: false
-    LayerShell.Window.keyboardInteractivity: overlay
+    LayerShell.Window.keyboardInteractivity: root.keyboardRequested
         ? LayerShell.Window.KeyboardInteractivityOnDemand
         : LayerShell.Window.KeyboardInteractivityNone
 
@@ -99,9 +101,18 @@ QW.Window {
         } else if (!barHover.hovered) {
             scheduleCollapse()
         }
+        if (activePanel.length === 0) {
+            panelInputRect = Qt.rect(0, 0, 0, 0)
+        } else {
+            updatePanelInputRect(activePanel)
+        }
+        if (activePanel !== "network")
+            keyboardRequested = false
         updateInputRegion()
         Qt.callLater(updateInputRegion)
     }
+
+    onPanelInputRectChanged: updateInputRegion()
 
     onClosing: Qt.quit()
 
@@ -194,14 +205,43 @@ QW.Window {
         expandBar()
         activePanel = name
         panelX = panelXFor(anchor, width)
+        updatePanelInputRect(name)
         updateInputRegion()
         Qt.callLater(updateInputRegion)
-        Qt.callLater(function() { panelX = panelXFor(anchor, width) })
+        Qt.callLater(function() {
+            panelX = panelXFor(anchor, width)
+            updatePanelInputRect(name)
+        })
+    }
+
+    function updatePanelInputRect(name) {
+        const sizes = {
+            windows: [500, 380],
+            power: [360, 415],
+            network: [430, 470],
+            volume: [360, 440],
+            battery: [390, 410],
+            bluetooth: [390, 430],
+            tray: [410, 270],
+            trayMenu: [230, 360]
+        }
+        const size = sizes[name]
+        if (!size) {
+            panelInputRect = Qt.rect(0, 0, 0, 0)
+            return
+        }
+        const scale = 0.9
+        const w = size[0] * scale
+        const h = size[1] * scale
+        const baseX = name === "trayMenu" ? trayMenuPanel.x : panelX
+        const x = baseX + (size[0] - w) / 2
+        const y = panelBottom - h
+        panelInputRect = Qt.rect(Math.round(x), Math.round(y), Math.ceil(w), Math.ceil(h))
     }
 
     function updateInputRegion() {
         if (hudHidden) {
-            InputRegion.apply(Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), false, Qt.rect(0, 0, 0, 0))
+            InputRegion.apply(Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), false)
             return
         }
         const finalWidth = barExpanded ? expandedWidth : collapsedWidth
@@ -212,14 +252,12 @@ QW.Window {
             ? Qt.rect(barX + groupPopupX, barY - groupPopupHeight - 8,
                       groupPopupWidth, groupPopupHeight + 8)
             : Qt.rect(0, 0, 0, 0)
-        // While the bar is hovered (i.e. before a click can open a panel), give
-        // the surface the full input region. Doing this only after the click
-        // is too late on some compositor grab paths and lets the panel click
-        // fall through to the window behind.
-        const wantsFullInput = activePanel.length > 0
-            || groupPopupVisible
-            || (barExpanded && barHover.hovered)
-        InputRegion.apply(barRect, popupRect, wantsFullInput, Qt.rect(0, 0, screenW, screenH))
+        // Only the bar, the group flyout and the currently visible panel are
+        // interactive. The rest of the screen stays transparent to input, so
+        // the active window keeps focus and its scroll wheel keeps working.
+        // While the pointer is on the bar, use a full region briefly so a
+        // click that opens a panel can never fall through in the same grab.
+        InputRegion.apply(barRect, popupRect, panelInputRect, barHover.hovered)
     }
 
     function showToast(message, success) {
@@ -242,6 +280,10 @@ QW.Window {
         trayAnchorX = anchorX
         expandBar()
         activePanel = "trayMenu"
+        Qt.callLater(function() {
+            updatePanelInputRect("trayMenu")
+            updateInputRegion()
+        })
     }
 
     function trayItemClicked(service, itemIsMenu, anchorX, button) {
@@ -381,21 +423,6 @@ QW.Window {
         function onAudioResult(ok, message) { root.showToast(message, ok) }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        color: "#33191717"
-        opacity: root.overlay ? 1 : 0
-        visible: opacity > 0
-        z: 1
-        Behavior on opacity { NumberAnimation { duration: 120 } }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        z: 2
-        enabled: root.overlay
-        onClicked: root.closePanels()
-    }
 
     // ---------------------------------------------------------------------
     // Collapsed / expanded floating strip
@@ -768,6 +795,7 @@ QW.Window {
         x: root.panelX
         y: root.panelBottom - height
         onCloseRequested: root.closePanels()
+        onKeyboardRequested: requested => root.keyboardRequested = requested
     }
 
     VolumePanel {

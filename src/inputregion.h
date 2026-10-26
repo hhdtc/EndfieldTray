@@ -19,7 +19,7 @@ public:
 
     void setWindow(QWindow *window);
 
-    Q_INVOKABLE void apply(const QRect &barRect, const QRect &popupRect, bool fullScreen, const QRect &fullRect = QRect());
+    Q_INVOKABLE void apply(const QRect &barRect, const QRect &popupRect, const QRect &panelRect, bool fullScreen = false);
 
 private:
     void update();
@@ -27,6 +27,6 @@ private:
     QWindow *m_window = nullptr;
     QRect m_barRect;
     QRect m_popupRect;
-    QRect m_fullRect;
+    QRect m_panelRect;
     bool m_fullScreen = false;
 };

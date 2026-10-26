@@ -17,6 +17,9 @@ BasePanel {
     property string selectedSsid: ""
     property string selectedSecurity: ""
 
+    signal keyboardRequested(bool requested)
+    onSelectedSsidChanged: keyboardRequested(selectedSsid.length > 0)
+
     onIsActiveChanged: {
         if (!isActive) {
             selectedSsid = ""
