@@ -18,6 +18,8 @@
 #include <QStandardPaths>
 #include <QTimer>
 
+#include <memory>
+
 int main(int argc, char **argv)
 {
     QGuiApplication app(argc, argv);
@@ -47,17 +49,15 @@ int main(int argc, char **argv)
     parser.addOption(screenshotOption);
     parser.process(app);
 
-    QLockFile *lock = nullptr;
+    std::unique_ptr<QLockFile> lock;
     if (!parser.isSet(noLockOption)) {
         const QString runtime = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
-        lock = new QLockFile(QDir(runtime).filePath(QStringLiteral("endfield-tray.lock")));
-        lock->setStaleLockTime(0);
+        lock = std::make_unique<QLockFile>(QDir(runtime).filePath(QStringLiteral("endfield-tray.lock")));
         if (!lock->tryLock(120)) {
             qWarning("endfield-tray is already running.");
             return 0;
         }
     }
-    Q_UNUSED(lock)
 
     QQuickStyle::setStyle(QStringLiteral("Basic"));
     QIcon::setThemeName(QStringLiteral("breeze"));

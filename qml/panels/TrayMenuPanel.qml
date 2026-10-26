@@ -10,7 +10,7 @@ Item {
     property var columns: []
 
     width: 230 * Math.max(1, columns.length)
-    height: 320
+    height: 360
     opacity: 0
 
     signal closeRequested()
