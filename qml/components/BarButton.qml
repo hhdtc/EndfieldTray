@@ -10,17 +10,17 @@ Item {
     property bool active: false
     property bool accent: false
     property bool showChevron: false
-    property int horizontalPadding: 8
+    property int horizontalPadding: 7
 
     signal clicked()
     signal wheeled(var wheel)
 
     implicitWidth: content.implicitWidth + horizontalPadding * 2
-    implicitHeight: 38
+    implicitHeight: 32
 
     Rectangle {
         anchors.fill: parent
-        radius: 13
+        radius: 10
         color: root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
                            : (mouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.055) : "transparent")
         border.width: root.active ? 1 : 0
@@ -35,8 +35,8 @@ Item {
         IconGlyph {
             visible: root.icon.length > 0
             name: root.icon
-            width: 15
-            height: 15
+            width: 14
+            height: 14
             color: root.active || root.accent ? Theme.accent : Theme.textDim
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -49,7 +49,7 @@ Item {
                 text: root.label
                 color: root.active || root.accent ? Theme.accent : Theme.text
                 font.family: Theme.sans
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.7
                 visible: text.length > 0

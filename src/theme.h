@@ -60,8 +60,8 @@ public:
     QString sans() const { return m_sans; }
     QString mono() const { return m_mono; }
     QString cjk() const { return m_cjk; }
-    int barHeight() const { return 56; }
-    int barWidth() const { return 860; }
+    int barHeight() const { return 44; }
+    int barWidth() const { return 700; }
 
     void setLoadedFamilies(const QStringList &families);
 

@@ -20,26 +20,43 @@ QW.Window {
     readonly property var screenInfo: root.screen
     readonly property int screenW: screenInfo ? screenInfo.width : 1920
     readonly property int screenH: screenInfo ? screenInfo.height : 1080
-    readonly property int barWidth: Math.min(Theme.barWidth, screenW - 48)
+    readonly property int expandedWidth: Math.min(Theme.barWidth, screenW - 48)
+    readonly property int collapsedWidth: 108
     readonly property int barHeight: Theme.barHeight
     readonly property int bottomGap: 10
     readonly property bool overlay: activePanel.length > 0
 
+    property bool barExpanded: false
     property string activePanel: ""
     property real panelX: 0
+
     property string trayService: ""
     property var trayItems: []
     property real trayAnchorX: 0
+
+    property bool groupPopupVisible: false
+    property bool groupPopupHovered: false
+    property var groupWindows: []
+    property string groupAppName: ""
+    property int groupPopupGroup: -1
+    property real groupPopupX: 8
+    readonly property int groupPopupWidth: 252
+    readonly property int groupPopupHeight: 42 + Math.min(6, Math.max(1, groupWindows.length)) * 28
+
     property string toastMessage: ""
     property bool toastSuccess: true
     property bool toastShown: false
     property string clockText: "--:--"
     property string dateText: "--- / -- ---"
 
-    width: windowed ? 1180 : (overlay ? screenW : barWidth)
-    height: windowed ? 760 : (overlay ? screenH : barHeight + bottomGap + 2)
-    x: windowed ? Math.max(0, (screenW - width) / 2) : 0
-    y: windowed ? 96 : 0
+    readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
+    // The layer surface is always screen-sized; input is restricted to the
+    // visible bar/popup/panel through InputRegion, so transparent pixels never
+    // swallow clicks.
+    width: screenW
+    height: screenH
+    x: 0
+    y: 0
 
     LayerShell.Window.anchors: LayerShell.Window.AnchorBottom
     LayerShell.Window.layer: LayerShell.Window.LayerOverlay
@@ -55,10 +72,14 @@ QW.Window {
 
     onActivePanelChanged: {
         if (activePanel.length > 0) {
-            root.requestActivate()
+            expandBar()
+            hideGroup()
             if (activePanel === "network")
                 System.refreshNetworks()
+        } else if (!barHover.hovered) {
+            scheduleCollapse()
         }
+        updateInputRegion()
     }
 
     onClosing: Qt.quit()
@@ -69,20 +90,64 @@ QW.Window {
         dateText = Qt.formatDate(now, "ddd").toUpperCase() + " / " + Qt.formatDate(now, "dd MMM").toUpperCase()
     }
 
+    function expandBar() {
+        collapseTimer.stop()
+        barExpanded = true
+    }
+
+    function scheduleCollapse() {
+        if (!overlay && !groupPopupVisible)
+            collapseTimer.restart()
+    }
+
     function closePanels() {
         activePanel = ""
         trayService = ""
         trayItems = []
         toastShown = false
+        scheduleCollapse()
+    }
+
+    function hideGroup() {
+        if (!groupPopupVisible)
+            return
+        groupPopupVisible = false
+        groupPopupHovered = false
+        groupHideTimer.stop()
+        groupWindows = []
+        groupPopupGroup = -1
+        updateInputRegion()
+        scheduleCollapse()
+    }
+
+    function scheduleHideGroup() {
+        if (groupPopupVisible)
+            groupHideTimer.restart()
+    }
+
+    function showGroup(groupIndex, windows, appName, item) {
+        if (!windows || windows.length <= 1)
+            return
+        groupPopupGroup = groupIndex
+        groupWindows = windows
+        groupAppName = appName
+        const point = item.mapToItem(bar, 0, 0)
+        groupPopupX = Math.max(6, Math.min(bar.width - groupPopupWidth - 6,
+                                           point.x + item.width / 2 - groupPopupWidth / 2))
+        groupPopupVisible = true
+        groupPopupHovered = false
+        groupHideTimer.stop()
+        expandBar()
+        updateInputRegion()
     }
 
     function globalX(item) {
         if (!item)
             return root.screenW / 2
-        // Measure relative to the bar, whose content geometry never changes,
-        // then add the fixed offset of the centered bar on the final screen.
+        // Measure within the bar, then apply the fixed centered-bar offset. This
+        // is stable even while the bar expands/collapses.
         const point = item.mapToItem(bar, item.width / 2, 0)
-        return (root.screenW - root.barWidth) / 2 + point.x
+        return (root.screenW - root.expandedWidth) / 2 + point.x
     }
 
     function panelXFor(item, panelWidth) {
@@ -94,20 +159,29 @@ QW.Window {
             closePanels()
             return
         }
+        hideGroup()
         const widths = {
             windows: 500,
             power: 360,
             network: 430,
-            volume: 340,
-            battery: 360,
+            volume: 360,
+            battery: 390,
             tray: 410
         }
         const width = widths[name] || 360
-        // Set the overlay first: the window becomes screen-wide, so the anchor
-        // must be measured in the expanded coordinate space.
+        expandBar()
         activePanel = name
         panelX = panelXFor(anchor, width)
         Qt.callLater(function() { panelX = panelXFor(anchor, width) })
+    }
+
+    function updateInputRegion() {
+        const barRect = Qt.rect(bar.x, bar.y, bar.width, bar.height)
+        const popupRect = groupPopupVisible
+            ? Qt.rect(bar.x + groupPopupX, bar.y - groupPopupHeight - 8,
+                      groupPopupWidth, groupPopupHeight + 8)
+            : Qt.rect(0, 0, 0, 0)
+        InputRegion.apply(barRect, popupRect, overlay)
     }
 
     function showToast(message, success) {
@@ -128,6 +202,7 @@ QW.Window {
         trayService = service
         trayItems = items
         trayAnchorX = anchorX
+        expandBar()
         activePanel = "trayMenu"
     }
 
@@ -141,12 +216,60 @@ QW.Window {
         }
     }
 
+    onBarExpandedChanged: {
+        updateInputRegion()
+        Qt.callLater(updateInputRegion)
+    }
+    onGroupPopupVisibleChanged: {
+        updateInputRegion()
+        Qt.callLater(updateInputRegion)
+    }
+    onWidthChanged: updateInputRegion()
+    onHeightChanged: updateInputRegion()
+
+    Timer {
+        id: previewRecentTimer
+        interval: 700
+        repeat: true
+        onTriggered: {
+            if (RecentApps.count > 0) {
+                const group = RecentApps.groupAt(0)
+                root.groupPopupX = 130
+                root.groupWindows = group.windows
+                root.groupAppName = group.appName
+                root.groupPopupVisible = true
+                root.updateInputRegion()
+                stop()
+            }
+        }
+    }
+
     Timer {
         id: clockTimer
         interval: 15000
         running: true
         repeat: true
         onTriggered: root.updateClock()
+    }
+
+    Timer {
+        id: collapseTimer
+        interval: 700
+        onTriggered: {
+            if (!barHover.hovered && !root.overlay && !root.groupPopupVisible) {
+                root.barExpanded = false
+                root.hideGroup()
+            }
+        }
+    }
+
+    Timer {
+        id: groupHideTimer
+        interval: 480
+        onTriggered: {
+            if (!root.groupPopupHovered)
+                root.hideGroup()
+        }
     }
 
     Timer {
@@ -158,6 +281,7 @@ QW.Window {
     Component.onCompleted: {
         updateClock()
         System.refreshAll()
+        updateInputRegion()
         if (App.previewPanel && App.previewPanel.length > 0) {
             const preview = App.previewPanel
             if (preview === "trayMenu") {
@@ -165,6 +289,9 @@ QW.Window {
                     if (TrayModel.count > 0)
                         root.openTrayMenu(TrayModel.serviceAt(0), screenW - 120)
                 })
+            } else if (preview === "recent") {
+                root.barExpanded = true
+                previewRecentTimer.start()
             } else {
                 const anchors = {
                     windows: windowsButton,
@@ -187,12 +314,10 @@ QW.Window {
 
     Connections {
         target: System
-        function onNetworkResult(ok, message) {
-            root.showToast(message, ok)
-        }
-        function onPowerResult(ok, message) {
-            root.showToast(message, ok)
-        }
+        function onNetworkResult(ok, message) { root.showToast(message, ok) }
+        function onPowerResult(ok, message) { root.showToast(message, ok) }
+        function onPowerProfileResult(ok, message) { root.showToast(message, ok) }
+        function onAudioResult(ok, message) { root.showToast(message, ok) }
     }
 
     Rectangle {
@@ -212,7 +337,7 @@ QW.Window {
     }
 
     // ---------------------------------------------------------------------
-    // Compact floating strip
+    // Collapsed / expanded floating strip
     // ---------------------------------------------------------------------
     Item {
         id: bar
@@ -222,67 +347,26 @@ QW.Window {
         y: root.height - root.barHeight - root.bottomGap
         z: 20
 
+        HoverHandler {
+            id: barHover
+            onHoveredChanged: {
+                if (hovered) {
+                    root.expandBar()
+                } else if (!root.groupPopupVisible) {
+                    root.scheduleCollapse()
+                }
+            }
+        }
+
         EndfieldFrame {
             anchors.fill: parent
             radius: root.barHeight / 2
-            accentFrom: 0.035
-            accentTo: 0.075
+            accentFrom: 0.04
+            accentTo: 0.10
+            decorations: root.barExpanded
         }
 
-        Row {
-            anchors.left: parent.left
-            anchors.leftMargin: 14
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 8
-
-            IconGlyph {
-                name: "diamond"
-                width: 23
-                height: 23
-                color: Theme.accent
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: -2
-
-                Text {
-                    text: "ENDFIELD"
-                    color: Theme.text
-                    font.family: Theme.sans
-                    font.pixelSize: 14
-                    font.weight: Font.Bold
-                    font.letterSpacing: 2
-                }
-
-                Text {
-                    text: "TRAY  /  07"
-                    color: Theme.accentDim
-                    font.family: Theme.mono
-                    font.pixelSize: 6
-                    font.letterSpacing: 0.8
-                }
-            }
-
-            Rectangle {
-                width: 1
-                height: 22
-                color: Theme.lineBright
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            BarButton {
-                id: windowsButton
-                anchors.verticalCenter: parent.verticalCenter
-                icon: "windows"
-                label: "WINDOWS"
-                trailing: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : "--"
-                active: root.activePanel === "windows"
-                onClicked: root.togglePanel("windows", windowsButton)
-            }
-        }
-
+        // Collapsed state: time only.
         Column {
             anchors.centerIn: parent
             spacing: -4
@@ -292,34 +376,102 @@ QW.Window {
                 text: root.clockText
                 color: Theme.text
                 font.family: Theme.sans
-                font.pixelSize: 21
+                font.pixelSize: 19
                 font.weight: Font.DemiBold
                 font.letterSpacing: 1
             }
 
             Text {
+                visible: root.barExpanded
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: root.dateText
                 color: Theme.textFaint
                 font.family: Theme.mono
                 font.pixelSize: 6
-                font.letterSpacing: 0.9
+                font.letterSpacing: 0.8
             }
         }
 
+        // Left: mark, windows-menu button, recent apps.
         Row {
+            id: leftRow
+            visible: root.barExpanded
+            anchors.left: parent.left
+            anchors.leftMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+
+            Item {
+                width: 16
+                height: 32
+                IconGlyph {
+                    anchors.centerIn: parent
+                    name: "diamond"
+                    width: 16
+                    height: 16
+                    color: Theme.accent
+                }
+            }
+
+            BarButton {
+                id: windowsButton
+                width: 38
+                icon: "windows"
+                trailing: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : "--"
+                active: root.activePanel === "windows"
+                horizontalPadding: 2
+                onClicked: root.togglePanel("windows", windowsButton)
+            }
+
+            Row {
+                spacing: 2
+                anchors.verticalCenter: parent.verticalCenter
+
+                Repeater {
+                    model: RecentApps
+
+                    delegate: RecentAppButton {
+                        id: recentButton
+                        required property int index
+                        required property var model
+
+                        visible: index < 3
+                        width: visible ? 80 : 0
+                        appName: model.appName
+                        appIcon: model.icon
+                        windowCount: model.windowCount
+                        active: model.active
+
+                        onClicked: {
+                            if (model.windowCount === 1)
+                                RecentApps.activateWindow(index, 0)
+                            else
+                                root.showGroup(index, model.windows, model.appName, recentButton)
+                        }
+                        onHoveredChanged: hovered => {
+                            if (hovered)
+                                root.showGroup(index, model.windows, model.appName, recentButton)
+                            else
+                                root.scheduleHideGroup()
+                        }
+                    }
+                }
+            }
+        }
+
+        // Right: radio, audio, battery, tray, power.
+        Row {
+            id: rightRow
+            visible: root.barExpanded
             anchors.right: parent.right
-            anchors.rightMargin: 9
+            anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
 
             StatusChip {
                 id: networkChip
-                anchors.verticalCenter: parent.verticalCenter
+                width: 34
                 icon: System.wifiConnected ? "wifi" : (System.wifiEnabled ? "wifi" : "wifi-off")
-                text: System.wifiConnected
-                    ? (System.wifiSsid.length > 7 ? System.wifiSsid.substring(0, 7) : System.wifiSsid)
-                    : (System.wifiEnabled ? "OFF" : "RADIO")
                 active: root.activePanel === "network"
                 warning: System.wifiEnabled && !System.wifiConnected
                 onClicked: root.togglePanel("network", networkChip)
@@ -327,7 +479,6 @@ QW.Window {
 
             StatusChip {
                 id: volumeChip
-                anchors.verticalCenter: parent.verticalCenter
                 icon: System.muted ? "volume-mute" : "volume"
                 text: System.volume + "%"
                 active: root.activePanel === "volume"
@@ -339,7 +490,6 @@ QW.Window {
             StatusChip {
                 id: batteryChip
                 visible: System.batteryPresent
-                anchors.verticalCenter: parent.verticalCenter
                 icon: System.charging ? "battery-charging" : "battery"
                 text: System.batteryPercent + "%"
                 active: root.activePanel === "battery"
@@ -349,16 +499,19 @@ QW.Window {
                 onClicked: root.togglePanel("battery", batteryChip)
             }
 
-            Rectangle {
+            Item {
                 width: 1
-                height: 20
-                color: Theme.line
-                anchors.verticalCenter: parent.verticalCenter
+                height: 32
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 1
+                    height: 18
+                    color: Theme.line
+                }
             }
 
             Row {
                 spacing: 0
-                anchors.verticalCenter: parent.verticalCenter
 
                 Repeater {
                     model: TrayModel
@@ -368,23 +521,22 @@ QW.Window {
                         required property int index
                         required property var model
 
-                        visible: index < 4
-                        width: visible ? 22 : 0
-                        height: 34
-                        anchors.verticalCenter: parent.verticalCenter
+                        visible: index < 3
+                        width: visible ? 19 : 0
+                        height: 32
 
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: 1
-                            radius: 8
+                            radius: 6
                             color: trayMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.08) : "transparent"
                         }
 
                         Kirigami.Icon {
                             anchors.centerIn: parent
                             visible: model.iconName.length > 0
-                            width: 16
-                            height: 16
+                            width: 14
+                            height: 14
                             source: model.iconName
                         }
 
@@ -392,21 +544,21 @@ QW.Window {
                             anchors.centerIn: parent
                             visible: model.iconName.length === 0
                             name: "diamond"
-                            width: 13
-                            height: 13
+                            width: 11
+                            height: 11
                             color: Theme.textDim
                         }
 
                         Rectangle {
                             visible: model.attention
-                            width: 4
-                            height: 4
-                            radius: 2
+                            width: 3
+                            height: 3
+                            radius: 1.5
                             color: Theme.warning
                             anchors.right: parent.right
-                            anchors.rightMargin: 2
+                            anchors.rightMargin: 1
                             anchors.top: parent.top
-                            anchors.topMargin: 4
+                            anchors.topMargin: 3
                         }
 
                         MouseArea {
@@ -425,14 +577,13 @@ QW.Window {
 
             Item {
                 id: trayDrawer
-                width: 24
-                height: 34
-                anchors.verticalCenter: parent.verticalCenter
+                width: 20
+                height: 32
 
                 Rectangle {
                     anchors.fill: parent
                     anchors.margins: 1
-                    radius: 8
+                    radius: 6
                     color: drawerMouse.containsMouse || root.activePanel === "tray"
                         ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.09) : "transparent"
                 }
@@ -440,8 +591,8 @@ QW.Window {
                 IconGlyph {
                     anchors.centerIn: parent
                     name: "tray"
-                    width: 14
-                    height: 14
+                    width: 12
+                    height: 12
                     color: drawerMouse.containsMouse || root.activePanel === "tray" ? Theme.accent : Theme.textDim
                 }
 
@@ -456,13 +607,12 @@ QW.Window {
 
             Item {
                 id: powerButton
-                width: 34
-                height: 34
-                anchors.verticalCenter: parent.verticalCenter
+                width: 32
+                height: 32
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 17
+                    radius: 16
                     color: powerMouse.containsMouse || root.activePanel === "power"
                         ? Theme.accent : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
                     border.width: 1
@@ -472,8 +622,8 @@ QW.Window {
                 IconGlyph {
                     anchors.centerIn: parent
                     name: "power"
-                    width: 16
-                    height: 16
+                    width: 14
+                    height: 14
                     color: powerMouse.containsMouse || root.activePanel === "power" ? Theme.bg : Theme.accent
                 }
 
@@ -488,8 +638,31 @@ QW.Window {
         }
     }
 
+    // Hover flyout for a multi-window app group.
+    GroupPopup {
+        id: groupPopup
+        visible: root.groupPopupVisible
+        x: bar.x + root.groupPopupX
+        y: bar.y - height - 8
+        z: 25
+        appName: root.groupAppName
+        windows: root.groupWindows
+        groupIndex: root.groupPopupGroup
+        onHoveredChanged: hovered => {
+            root.groupPopupHovered = hovered
+            if (hovered)
+                groupHideTimer.stop()
+            else
+                root.scheduleHideGroup()
+        }
+        onActivated: windowIndex => {
+            RecentApps.activateWindow(root.groupPopupGroup, windowIndex)
+            root.hideGroup()
+        }
+    }
+
     // ---------------------------------------------------------------------
-    // Panels
+    // Secondary panels
     // ---------------------------------------------------------------------
     WindowsPanel {
         z: 30
@@ -537,6 +710,7 @@ QW.Window {
 
     TrayPanel {
         id: trayPanel
+        z: 30
         isActive: root.activePanel === "tray"
         x: root.panelX
         y: root.panelBottom - height
@@ -565,11 +739,10 @@ QW.Window {
 
     Toast {
         anchors.horizontalCenter: parent.horizontalCenter
-        y: root.height - root.barHeight - root.bottomGap - 38
+        y: root.height - root.barHeight - root.bottomGap - 34
         z: 50
         message: root.toastMessage
         success: root.toastSuccess
         shown: root.toastShown && root.overlay
     }
-
 }

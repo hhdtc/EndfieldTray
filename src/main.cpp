@@ -1,3 +1,5 @@
+#include "inputregion.h"
+#include "recentappsmodel.h"
 #include "systemservice.h"
 #include "theme.h"
 #include "traycontroller.h"
@@ -93,17 +95,21 @@ int main(int argc, char **argv)
     appInfo.insert(QStringLiteral("previewPanel"), parser.value(previewOption));
 
     WindowModel windowModel;
+    RecentAppsModel recentApps(&windowModel);
     TrayController trayController;
     TrayModel trayModel;
     SystemService systemService;
+    InputRegion inputRegion;
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("Theme"), &theme);
     engine.rootContext()->setContextProperty(QStringLiteral("App"), &appInfo);
     engine.rootContext()->setContextProperty(QStringLiteral("WindowModel"), &windowModel);
+    engine.rootContext()->setContextProperty(QStringLiteral("RecentApps"), &recentApps);
     engine.rootContext()->setContextProperty(QStringLiteral("TrayMenu"), &trayController);
     engine.rootContext()->setContextProperty(QStringLiteral("TrayModel"), &trayModel);
     engine.rootContext()->setContextProperty(QStringLiteral("System"), &systemService);
+    engine.rootContext()->setContextProperty(QStringLiteral("InputRegion"), &inputRegion);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
                      [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
@@ -111,6 +117,9 @@ int main(int argc, char **argv)
     engine.loadFromModule(QStringLiteral("Endfield"), QStringLiteral("Main"));
     if (engine.rootObjects().isEmpty()) {
         return 1;
+    }
+    if (auto *window = qobject_cast<QWindow *>(engine.rootObjects().constFirst())) {
+        inputRegion.setWindow(window);
     }
 
     if (parser.isSet(screenshotOption)) {

@@ -4,8 +4,8 @@ import "../components"
 BasePanel {
     id: root
 
-    panelWidth: 360
-    panelHeight: 338
+    panelWidth: 390
+    panelHeight: 410
     code: "05"
     title: "电池"
     detail: "ENERGY / BATTERY"
@@ -135,6 +135,42 @@ BasePanel {
             Text { text: "0%"; color: Theme.textFaint; font.family: Theme.mono; font.pixelSize: 7 }
             Item { width: parent.width - 44; height: 1 }
             Text { text: "100%"; color: Theme.textFaint; font.family: Theme.mono; font.pixelSize: 7 }
+        }
+
+        Item {
+            width: parent.width
+            height: System.powerProfileAvailable ? 50 : 0
+            visible: System.powerProfileAvailable
+
+            Column {
+                anchors.fill: parent
+                spacing: 5
+
+                Text {
+                    text: "POWER MODE  /  电源模式"
+                    color: Theme.textFaint
+                    font.family: Theme.mono
+                    font.pixelSize: 7
+                    font.letterSpacing: 0.7
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: 6
+
+                    Repeater {
+                        model: System.powerProfiles
+
+                        delegate: ChamferButton {
+                            required property var modelData
+                            width: (parent.width - 12) / 3
+                            label: modelData.label
+                            accent: modelData.active
+                            onClicked: System.setPowerProfile(modelData.id)
+                        }
+                    }
+                }
+            }
         }
 
         Rectangle { width: parent.width; height: 1; color: Theme.line }

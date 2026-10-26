@@ -10,17 +10,17 @@ Item {
     property bool warning: false
     property bool charging: false
     property real level: 1
-    property int horizontalPadding: 7
+    property int horizontalPadding: 6
 
     signal clicked()
     signal wheeled(var wheel)
 
     implicitWidth: Math.max(38, row.implicitWidth + horizontalPadding * 2)
-    implicitHeight: 36
+    implicitHeight: 32
 
     Rectangle {
         anchors.fill: parent
-        radius: 12
+        radius: 11
         color: root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
                            : (mouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.055) : "transparent")
         border.width: root.active ? 1 : 0
@@ -34,8 +34,8 @@ Item {
 
         IconGlyph {
             name: root.icon
-            width: 15
-            height: 15
+            width: 14
+            height: 14
             level: root.level
             charging: root.charging
             color: root.warning ? Theme.warning : (root.active || mouse.containsMouse ? Theme.accent : Theme.textDim)
@@ -50,7 +50,7 @@ Item {
                 text: root.text
                 color: root.warning ? Theme.warning : (root.active ? Theme.accent : Theme.text)
                 font.family: Theme.mono
-                font.pixelSize: 9
+                font.pixelSize: 8
                 font.weight: Font.Medium
             }
 

@@ -1,11 +1,12 @@
 import QtQuick
 import "../components"
+import org.kde.kirigami as Kirigami
 
 BasePanel {
     id: root
 
-    panelWidth: 340
-    panelHeight: 360
+    panelWidth: 360
+    panelHeight: 440
     code: "04"
     title: "音量"
     detail: "AUDIO / OUTPUT"
@@ -16,8 +17,10 @@ BasePanel {
     property real localVolume: System.volume
 
     onIsActiveChanged: {
-        if (isActive)
+        if (isActive) {
             localVolume = System.volume
+            System.refreshAudioSinks()
+        }
     }
 
     Connections {
@@ -36,15 +39,17 @@ BasePanel {
             height: 26
 
             Text {
-                text: "DEFAULT SINK  /  " + System.audioBackend
+                width: parent.width - 90
+                text: "OUTPUT  /  " + (System.audioSinkDescription.length > 0 ? System.audioSinkDescription : System.audioBackend)
                 color: Theme.textFaint
                 font.family: Theme.mono
                 font.pixelSize: 8
-                font.letterSpacing: 0.8
+                font.letterSpacing: 0.5
+                elide: Text.ElideRight
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Item { width: parent.width - 210; height: 1 }
+            Item { width: 8; height: 1 }
 
             IconGlyph {
                 name: System.muted ? "volume-mute" : "volume"
@@ -66,7 +71,7 @@ BasePanel {
 
         Item {
             width: parent.width
-            height: 116
+            height: 92
 
             Text {
                 anchors.left: parent.left
@@ -75,14 +80,14 @@ BasePanel {
                 text: String(Math.round(root.localVolume)).padStart(2, "0")
                 color: System.muted ? Theme.textFaint : Theme.text
                 font.family: Theme.sans
-                font.pixelSize: 86
+                font.pixelSize: 76
                 font.weight: Font.Bold
                 font.letterSpacing: -2
             }
 
             Text {
                 anchors.left: parent.left
-                anchors.leftMargin: Math.round(root.localVolume) >= 100 ? 140 : 94
+                anchors.leftMargin: Math.round(root.localVolume) >= 100 ? 122 : 83
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 20
                 text: "%"
@@ -117,7 +122,7 @@ BasePanel {
         EndfieldSlider {
             id: slider
             width: parent.width
-            height: 34
+            height: 30
             from: 0
             to: 100
             value: root.localVolume
@@ -130,7 +135,7 @@ BasePanel {
 
         Row {
             width: parent.width
-            height: 30
+            height: 18
 
             Text {
                 text: "0"
@@ -151,6 +156,99 @@ BasePanel {
             }
         }
 
+        Item {
+            width: parent.width
+            height: 112
+
+            Column {
+                anchors.fill: parent
+                spacing: 4
+
+                Text {
+                    text: "OUTPUT DEVICE  /  输出设备"
+                    color: Theme.textFaint
+                    font.family: Theme.mono
+                    font.pixelSize: 7
+                    font.letterSpacing: 0.6
+                }
+
+                ListView {
+                    width: parent.width
+                    height: 92
+                    clip: true
+                    model: System.audioSinks
+                    spacing: 1
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    delegate: Item {
+                        id: sinkRow
+                        required property int index
+                        required property var modelData
+
+                        width: ListView.view.width
+                        height: 23
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 6
+                            color: sinkMouse.containsMouse
+                                ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.07)
+                                : "transparent"
+                        }
+
+                        Rectangle {
+                            width: 5
+                            height: 5
+                            rotation: 45
+                            x: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: modelData.active ? Theme.accent : Theme.textFaint
+                        }
+
+                        Kirigami.Icon {
+                            visible: modelData.icon.length > 0
+                            x: 18
+                            width: 13
+                            height: 13
+                            source: modelData.icon
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            x: modelData.icon.length > 0 ? 36 : 20
+                            width: parent.width - x - (modelData.active ? 58 : 8)
+                            text: modelData.name
+                            color: modelData.active ? Theme.accent : Theme.textDim
+                            font.family: Theme.cjk
+                            font.pixelSize: 9
+                            elide: Text.ElideRight
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            visible: modelData.active
+                            anchors.right: parent.right
+                            anchors.rightMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: "DEFAULT"
+                            color: Theme.accent
+                            font.family: Theme.mono
+                            font.pixelSize: 6
+                            font.letterSpacing: 0.5
+                        }
+
+                        MouseArea {
+                            id: sinkMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: System.setAudioSink(modelData.id)
+                        }
+                    }
+                }
+            }
+        }
+
         Rectangle {
             width: parent.width
             height: 1
@@ -159,7 +257,7 @@ BasePanel {
 
         Row {
             width: parent.width
-            height: 38
+            height: 34
 
             ChamferButton {
                 label: System.muted ? "取消静音" : "静音"

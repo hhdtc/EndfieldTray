@@ -6,7 +6,7 @@ BasePanel {
     id: root
 
     panelWidth: 430
-    panelHeight: 440
+    panelHeight: 470
     code: "03"
     title: "网络"
     detail: "NETWORK / UPLINK"
@@ -148,7 +148,7 @@ BasePanel {
         ListView {
             id: networkList
             width: parent.width
-            height: root.selectedSsid.length > 0 ? 226 : 318
+            height: root.selectedSsid.length > 0 ? 190 : 230
             clip: true
             model: System.wifiNetworks
             spacing: 2

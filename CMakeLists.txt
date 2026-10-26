@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 DBus)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2 DBus WaylandClient)
 find_package(LayerShellQt REQUIRED)
 find_package(LibTaskManager REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -28,6 +28,8 @@ set(QML_FILES
     qml/components/EndfieldSlider.qml
     qml/components/Toast.qml
     qml/components/EmptyState.qml
+    qml/components/RecentAppButton.qml
+    qml/components/GroupPopup.qml
 
     qml/panels/BasePanel.qml
     qml/panels/WindowsPanel.qml
@@ -45,12 +47,16 @@ qt_add_executable(endfield-tray
     src/theme.cpp
     src/windowmodel.h
     src/windowmodel.cpp
+    src/recentappsmodel.h
+    src/recentappsmodel.cpp
     src/traycontroller.h
     src/traycontroller.cpp
     src/traymodel.h
     src/traymodel.cpp
     src/systemservice.h
     src/systemservice.cpp
+    src/inputregion.h
+    src/inputregion.cpp
 )
 
 qt_add_qml_module(endfield-tray
@@ -72,7 +78,15 @@ qt_add_resources(endfield-tray "app_assets"
         assets/fonts/OFL-JetBrainsMono.txt
 )
 
-target_include_directories(endfield-tray PRIVATE src)
+target_include_directories(endfield-tray PRIVATE
+    src
+    "${Qt6WaylandClient_DIR}/../../../include/qt6/QtWaylandClient/${Qt6_VERSION}"
+    "${Qt6WaylandClient_DIR}/../../../include/qt6/QtWaylandGlobal/${Qt6_VERSION}"
+    "${Qt6Gui_DIR}/../../../include/qt6/QtGui/${Qt6_VERSION}"
+    "${Qt6Gui_DIR}/../../../include/qt6/QtGui/${Qt6_VERSION}/QtGui"
+    "${Qt6Core_DIR}/../../../include/qt6/QtCore/${Qt6_VERSION}"
+    "${Qt6Core_DIR}/../../../include/qt6/QtCore/${Qt6_VERSION}/QtCore"
+)
 
 target_link_libraries(endfield-tray PRIVATE
     Qt6::Core
@@ -81,6 +95,7 @@ target_link_libraries(endfield-tray PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::DBus
+    Qt6::WaylandClient
     LayerShellQt::Interface
     PW::LibTaskManager
     PkgConfig::GIO

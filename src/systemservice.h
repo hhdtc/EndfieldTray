@@ -42,6 +42,14 @@ class SystemService : public QObject
     Q_PROPERTY(QString userName READ userName CONSTANT)
     Q_PROPERTY(QString hostName READ hostName CONSTANT)
 
+    Q_PROPERTY(bool powerProfileAvailable READ powerProfileAvailable NOTIFY powerProfilesChanged)
+    Q_PROPERTY(QString powerProfile READ powerProfile NOTIFY powerProfileChanged)
+    Q_PROPERTY(QVariantList powerProfiles READ powerProfiles NOTIFY powerProfilesChanged)
+
+    Q_PROPERTY(QVariantList audioSinks READ audioSinks NOTIFY audioSinksChanged)
+    Q_PROPERTY(QString audioSinkName READ audioSinkName NOTIFY audioSinkChanged)
+    Q_PROPERTY(QString audioSinkDescription READ audioSinkDescription NOTIFY audioSinkChanged)
+
 public:
     explicit SystemService(QObject *parent = nullptr);
 
@@ -69,8 +77,19 @@ public:
     QString userName() const;
     QString hostName() const;
 
+    bool powerProfileAvailable() const { return m_powerProfileAvailable; }
+    QString powerProfile() const { return m_powerProfile; }
+    QVariantList powerProfiles() const { return m_powerProfiles; }
+    QVariantList audioSinks() const { return m_audioSinks; }
+    QString audioSinkName() const { return m_audioSinkName; }
+    QString audioSinkDescription() const { return m_audioSinkDescription; }
+
     Q_INVOKABLE void refreshAll();
     Q_INVOKABLE void refreshNetworks();
+    Q_INVOKABLE void refreshPowerProfile();
+    Q_INVOKABLE void setPowerProfile(const QString &profile);
+    Q_INVOKABLE void refreshAudioSinks();
+    Q_INVOKABLE void setAudioSink(const QString &sinkName);
 
     Q_INVOKABLE void setVolume(int percent);
     Q_INVOKABLE void adjustVolume(int delta);
@@ -93,6 +112,12 @@ Q_SIGNALS:
     void batteryChanged();
     void networkResult(bool ok, const QString &message);
     void powerResult(bool ok, const QString &message);
+    void powerProfilesChanged();
+    void powerProfileChanged();
+    void audioSinksChanged();
+    void audioSinkChanged();
+    void powerProfileResult(bool ok, const QString &message);
+    void audioResult(bool ok, const QString &message);
 
 private:
     void pollAudio();
@@ -129,6 +154,16 @@ private:
     bool m_scanning = false;
     bool m_connecting = false;
     QVariantList m_wifiNetworks;
+
+    bool m_powerProfileAvailable = false;
+    QString m_powerProfile;
+    QVariantList m_powerProfiles;
+    bool m_profileQueryRunning = false;
+
+    QVariantList m_audioSinks;
+    QString m_audioSinkName;
+    QString m_audioSinkDescription;
+    bool m_sinkQueryRunning = false;
 
     bool m_batteryPresent = false;
     int m_batteryPercent = 0;

@@ -10,17 +10,26 @@
 
 ## 功能
 
-- **紧凑圆角长条**：约 860×56 逻辑像素，默认悬浮在屏幕底部中央。
+- **紧凑圆角长条**：展开约 700×44 逻辑像素；鼠标离开后收缩为 108×44 的纯时间胶囊，悬浮在屏幕底部中央。
 - **电源二级菜单**：睡眠、重启、关机、注销；操作需要二次确认。睡眠走 logind，重启/关机/注销走 `org.kde.Shutdown`。
 - **窗口二级菜单**：读取 KWin 当前窗口；点击切换，中键最小化，悬停显示关闭按钮。窗口数据来自 Plasma 的 `LibTaskManager`。
 - **系统托盘**：自带 StatusNotifierItem host，不依赖 Plasma 系统托盘；支持左键激活、右键菜单、DBusMenu 子菜单、托盘抽屉。
-- **Wi-Fi**：读取 NetworkManager；显示当前 SSID / 信号，扫描、连接（含密码输入）、断开、开关 radio。
-- **音量**：PipeWire / WirePlumber (`wpctl`)，支持滑块、滚轮调节和静音。
-- **电池**：sysfs `power_supply`；显示百分比、充电状态、剩余时间、健康度。
-- **时钟**：15 秒刷新一次，不做无意义的秒针/常驻动画。
+- **Wi-Fi**：读取 NetworkManager；状态栏只显示图标，不显示 SSID；详细面板可扫描、连接（含密码输入）、断开、开关 radio。
+- **音量**：PipeWire / WirePlumber (`wpctl`)，支持滑块、滚轮调节和静音；详细面板可切换输出设备。
+- **电池**：sysfs `power_supply`；显示百分比、充电状态、剩余时间、健康度；详细面板可切换省电 / 平衡 / 性能电源模式（power-profiles-daemon）。
+- **时钟**：15 秒刷新一次，不做无意义的秒针/常驻动画；鼠标离开后自动收缩为只显示时间的小胶囊。
+- **最近窗口**：展开时显示最近使用的 3 个应用（按应用分组，同应用只占一个位置）；悬停多窗口组可在上方展开该组的窗口列表，其余窗口仍在 `WINDOWS` 二级菜单中。
 - **低空载开销**：没有常驻扫描线、粒子或循环动画；网络/音频/电池轮询间隔经过拉长。
 
+最近窗口按应用分组，最多 3 个应用占据展开条；多窗口组悬停展开：
+
+![最近窗口分组](docs/recent.png)
+
 ![网络面板](docs/network.png)
+
+音量详细面板可切换输出设备：
+
+![音量与输出设备](docs/volume.png)
 
 ## 环境要求
 
@@ -65,7 +74,7 @@ cmake --build build -j"$(nproc)"
 ./build/endfield-tray --no-lock --preview-panel power --screenshot /tmp/power.png
 ```
 
-`--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`tray`、`trayMenu`。
+`--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`tray`、`trayMenu`，以及开发用的 `recent`。
 
 ## 安装
 
@@ -131,6 +140,7 @@ endfield-plasma-panel show
 
 - **不是一个 Plasma 面板**：`plasmashell` 的 panel/applet 约束太强，难以做到完整的悬浮圆角长条和自定义二级菜单。这里使用 LayerShell 直接和 KWin 组合，窗口任务使用 Plasma 的 `LibTaskManager`，托盘使用原生 StatusNotifier 协议。
 - **不使用常驻动画**：只有面板打开/关闭、Toast 和扫描中的刷新图标会有短动画；没有循环扫描线、呼吸灯或每秒重绘。
+- **输入区域跟随可见区域**：LayerShell 窗口保持全屏透明，但通过 Wayland `wl_surface` 输入区域限制为当前可见的胶囊、分组浮层或面板；这样收缩后不会挡住桌面点击。
 - **轮询间隔**：音频 2 s、网络 20 s、电池 30 s、托盘属性 15 s；打开对应面板时会按需立即刷新。
 - **圆角长条**：外层是 `Rectangle + radius` 的轻量框架，不使用大面积 Canvas/FBO，减少 GPU/内存占用。
 
@@ -141,6 +151,8 @@ src/
   main.cpp           Qt/QML 入口、单实例锁、字体、命令行
   theme.*            调色板与字体
   windowmodel.*      LibTaskManager -> 扁平窗口模型
+  recentappsmodel.*  窗口按应用分组 / 最近使用排序
+  inputregion.*      全屏透明 LayerShell 的输入区域裁剪
   traymodel.*        StatusNotifierItem host / 托盘项目
   traycontroller.*   DBusMenu 导入与菜单事件
   systemservice.*    WiFi / 音频 / 电池 / 电源
@@ -159,7 +171,7 @@ scripts/
 - 仅验证 KDE Plasma 6.8 Wayland；X11 不保证。
 - 不提供设置界面；修改宽度、间距、颜色需要改 `src/theme.h` / `qml/Main.qml` 后重新构建。
 - 托盘图标依赖应用提供的 `IconName` 或主题图标；少数应用只提供 pixmap，会显示菱形占位符。
-- 没有系统级自动隐藏；悬浮条常驻显示。
+- 没有“整条自动隐藏”选项；鼠标离开后只收缩为时间胶囊，仍保留一个可悬停的入口。
 - 最大化窗口会延伸到悬浮条下方（LayerShell 不额外设置 strut，以免 KWin 把悬浮条整体上推）。
 - 电源操作的可用性取决于 `org.kde.Shutdown` / logind / polkit 配置。
 

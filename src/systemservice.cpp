@@ -6,10 +6,14 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QSysInfo>
 #include <QtMath>
+#include <QRegularExpression>
 
 #include <algorithm>
 
@@ -35,6 +39,20 @@ QStringList splitNmcli(const QString &line)
     }
     fields.append(current);
     return fields;
+}
+
+QString powerProfileLabel(const QString &profile)
+{
+    if (profile == QLatin1String("power-saver")) {
+        return QStringLiteral("省电");
+    }
+    if (profile == QLatin1String("balanced")) {
+        return QStringLiteral("平衡");
+    }
+    if (profile == QLatin1String("performance")) {
+        return QStringLiteral("性能");
+    }
+    return profile;
 }
 
 QString readTextFile(const QString &path)
@@ -86,6 +104,7 @@ SystemService::SystemService(QObject *parent)
     : QObject(parent)
 {
     m_wifiAvailable = !QStandardPaths::findExecutable(QStringLiteral("nmcli")).isEmpty();
+    m_powerProfileAvailable = !QStandardPaths::findExecutable(QStringLiteral("powerprofilesctl")).isEmpty();
 
     m_audioTimer.setInterval(2000);
     connect(&m_audioTimer, &QTimer::timeout, this, &SystemService::pollAudio);
@@ -107,6 +126,8 @@ SystemService::SystemService(QObject *parent)
         pollAudio();
         pollNetwork();
         pollBattery();
+        refreshPowerProfile();
+        refreshAudioSinks();
     });
 }
 
@@ -126,6 +147,8 @@ void SystemService::refreshAll()
     pollNetwork();
     pollBattery();
     refreshNetworks();
+    refreshPowerProfile();
+    refreshAudioSinks();
 }
 
 void SystemService::run(const QString &program,
@@ -582,6 +605,171 @@ void SystemService::pollBattery()
     if (presentChanged || present) {
         Q_EMIT batteryChanged();
     }
+}
+
+void SystemService::refreshPowerProfile()
+{
+    if (!m_powerProfileAvailable || m_profileQueryRunning) {
+        return;
+    }
+    m_profileQueryRunning = true;
+    run(QStringLiteral("powerprofilesctl"), {QStringLiteral("list")},
+        [this](int code, const QString &out, const QString &) {
+            QStringList available;
+            QString active;
+            if (code == 0) {
+                static const QRegularExpression linePattern(
+                    QStringLiteral("^\\s*(\\*)?\\s*(power-saver|balanced|performance):"));
+                const QStringList lines = out.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                for (const QString &line : lines) {
+                    const QRegularExpressionMatch match = linePattern.match(line);
+                    if (!match.hasMatch()) {
+                        continue;
+                    }
+                    const QString id = match.captured(2);
+                    if (!available.contains(id)) {
+                        available.append(id);
+                    }
+                    if (!match.captured(1).isEmpty()) {
+                        active = id;
+                    }
+                }
+            }
+
+            const QStringList fixedOrder{QStringLiteral("power-saver"), QStringLiteral("balanced"), QStringLiteral("performance")};
+            QVariantList profiles;
+            for (const QString &id : fixedOrder) {
+                if (!available.isEmpty() && !available.contains(id)) {
+                    continue;
+                }
+                QVariantMap entry;
+                entry.insert(QStringLiteral("id"), id);
+                entry.insert(QStringLiteral("label"), powerProfileLabel(id));
+                entry.insert(QStringLiteral("active"), id == active);
+                profiles.append(entry);
+            }
+            m_powerProfiles = profiles;
+            if (!active.isEmpty() && active != m_powerProfile) {
+                m_powerProfile = active;
+                Q_EMIT powerProfileChanged();
+            }
+            Q_EMIT powerProfilesChanged();
+            m_profileQueryRunning = false;
+        });
+}
+
+void SystemService::setPowerProfile(const QString &profile)
+{
+    if (!m_powerProfileAvailable || profile.isEmpty()) {
+        return;
+    }
+    run(QStringLiteral("powerprofilesctl"), {QStringLiteral("set"), profile},
+        [this, profile](int code, const QString &, const QString &err) {
+            if (code == 0) {
+                m_powerProfile = profile;
+                Q_EMIT powerProfileChanged();
+                Q_EMIT powerProfileResult(true, QStringLiteral("电源模式：%1").arg(powerProfileLabel(profile)));
+                refreshPowerProfile();
+            } else {
+                Q_EMIT powerProfileResult(false, err.trimmed().isEmpty() ? QStringLiteral("无法切换电源模式") : err.trimmed());
+            }
+        });
+}
+
+void SystemService::refreshAudioSinks()
+{
+    if (m_sinkQueryRunning || QStandardPaths::findExecutable(QStringLiteral("pactl")).isEmpty()) {
+        return;
+    }
+    m_sinkQueryRunning = true;
+
+    run(QStringLiteral("pactl"), {QStringLiteral("-f"), QStringLiteral("json"), QStringLiteral("list"), QStringLiteral("sinks")},
+        [this](int code, const QString &out, const QString &) {
+            QVariantList sinks;
+            if (code == 0) {
+                const QJsonDocument document = QJsonDocument::fromJson(out.toUtf8());
+                const QJsonArray array = document.array();
+                for (const QJsonValue &value : array) {
+                    const QJsonObject object = value.toObject();
+                    const QString name = object.value(QStringLiteral("name")).toString();
+                    if (name.isEmpty()) {
+                        continue;
+                    }
+                    const QJsonObject properties = object.value(QStringLiteral("properties")).toObject();
+                    QString label = properties.value(QStringLiteral("device.profile.description")).toString();
+                    if (label.isEmpty()) {
+                        label = properties.value(QStringLiteral("node.nick")).toString();
+                    }
+                    if (label.isEmpty()) {
+                        label = object.value(QStringLiteral("description")).toString(name);
+                    }
+
+                    QVariantMap entry;
+                    entry.insert(QStringLiteral("id"), name);
+                    entry.insert(QStringLiteral("name"), label);
+                    entry.insert(QStringLiteral("active"), false);
+                    entry.insert(QStringLiteral("icon"),
+                                 properties.value(QStringLiteral("device.icon_name")).toString());
+                    sinks.append(entry);
+                }
+            }
+
+            run(QStringLiteral("pactl"), {QStringLiteral("get-default-sink")},
+                [this, sinks](int sinkCode, const QString &sinkOut, const QString &) mutable {
+                    const QString defaultSink = sinkOut.trimmed();
+                    QString description;
+                    for (int i = 0; i < sinks.size(); ++i) {
+                        QVariantMap entry = sinks.at(i).toMap();
+                        const bool active = sinkCode == 0 && entry.value(QStringLiteral("id")).toString() == defaultSink;
+                        entry.insert(QStringLiteral("active"), active);
+                        if (active) {
+                            description = entry.value(QStringLiteral("name")).toString();
+                        } else if (description.isEmpty() && sinkCode != 0) {
+                            description = entry.value(QStringLiteral("name")).toString();
+                        }
+                        sinks[i] = entry;
+                    }
+
+                    std::sort(sinks.begin(), sinks.end(), [](const QVariant &a, const QVariant &b) {
+                        const bool aActive = a.toMap().value(QStringLiteral("active")).toBool();
+                        const bool bActive = b.toMap().value(QStringLiteral("active")).toBool();
+                        if (aActive != bActive) {
+                            return aActive;
+                        }
+                        return a.toMap().value(QStringLiteral("name")).toString()
+                            .localeAwareCompare(b.toMap().value(QStringLiteral("name")).toString()) < 0;
+                    });
+
+                    m_audioSinks = sinks;
+                    if (!defaultSink.isEmpty()) {
+                        m_audioSinkName = defaultSink;
+                        if (description.isEmpty()) {
+                            description = defaultSink;
+                        }
+                        m_audioSinkDescription = description;
+                    }
+                    Q_EMIT audioSinksChanged();
+                    Q_EMIT audioSinkChanged();
+                    m_sinkQueryRunning = false;
+                });
+        });
+}
+
+void SystemService::setAudioSink(const QString &sinkName)
+{
+    if (sinkName.isEmpty()) {
+        return;
+    }
+    run(QStringLiteral("pactl"), {QStringLiteral("set-default-sink"), sinkName},
+        [this, sinkName](int code, const QString &, const QString &err) {
+            if (code != 0) {
+                Q_EMIT audioResult(false, err.trimmed().isEmpty() ? QStringLiteral("无法切换输出设备") : err.trimmed());
+                return;
+            }
+            m_audioSinkName = sinkName;
+            Q_EMIT audioResult(true, QStringLiteral("输出设备已切换"));
+            QTimer::singleShot(120, this, [this] { pollAudio(); refreshAudioSinks(); });
+        });
 }
 
 bool SystemService::powerAction(const QString &action)

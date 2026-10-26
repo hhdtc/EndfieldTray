@@ -16,6 +16,7 @@ Item {
     property real accentTo: 0.10
     property bool hatch: false
     property bool shadow: true
+    property bool decorations: true
 
     Rectangle {
         anchors.fill: parent
@@ -40,6 +41,7 @@ Item {
 
     // Short acid rail at the left edge of the bottom lip.
     Rectangle {
+        visible: root.decorations
         x: root.width * root.accentFrom
         y: root.height - 2
         width: Math.max(18, root.width * (root.accentTo - root.accentFrom))
@@ -50,6 +52,7 @@ Item {
 
     // Registration tick at the opposite end.
     Rectangle {
+        visible: root.decorations
         x: root.width - 28
         y: root.height - 4
         width: 12
@@ -59,6 +62,7 @@ Item {
     }
 
     Rectangle {
+        visible: root.decorations
         x: root.width - 20
         y: 7
         width: 4
