@@ -94,6 +94,7 @@ QW.Window {
 
     onActivePanelChanged: {
         if (activePanel.length > 0) {
+            panelCloseTimer.stop()
             expandBar()
             hideGroup()
             if (activePanel === "network")
@@ -133,6 +134,7 @@ QW.Window {
     }
 
     function closePanels() {
+        panelCloseTimer.stop()
         activePanel = ""
         trayService = ""
         trayItems = []
@@ -360,6 +362,18 @@ QW.Window {
     }
 
     Timer {
+        id: panelCloseTimer
+        interval: 300
+        onTriggered: {
+            if (activePanel.length > 0 && !hudHover.hovered) {
+                closePanels()
+                barExpanded = false
+                updateInputRegion()
+            }
+        }
+    }
+
+    Timer {
         id: collapseTimer
         interval: 700
         onTriggered: {
@@ -423,6 +437,17 @@ QW.Window {
         function onAudioResult(ok, message) { root.showToast(message, ok) }
     }
 
+
+    HoverHandler {
+        id: hudHover
+        onHoveredChanged: {
+            if (hovered) {
+                panelCloseTimer.stop()
+            } else if (activePanel.length > 0 && (!App.previewPanel || App.previewPanel.length === 0)) {
+                panelCloseTimer.restart()
+            }
+        }
+    }
 
     // ---------------------------------------------------------------------
     // Collapsed / expanded floating strip
