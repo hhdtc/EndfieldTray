@@ -359,6 +359,7 @@ QW.Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.height - root.barHeight - root.bottomGap
         z: 20
+        clip: true
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
