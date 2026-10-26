@@ -167,6 +167,7 @@ QW.Window {
             network: 430,
             volume: 360,
             battery: 390,
+            bluetooth: 390,
             tray: 410
         }
         const width = widths[name] || 360
@@ -251,6 +252,7 @@ QW.Window {
                 network: networkChip,
                 volume: volumeChip,
                 battery: batteryChip,
+                bluetooth: bluetoothChip,
                 tray: trayDrawer
             }
             root.togglePanel(root.previewPanelName, anchors[root.previewPanelName] || windowsButton)
@@ -340,6 +342,7 @@ QW.Window {
     Connections {
         target: System
         function onNetworkResult(ok, message) { root.showToast(message, ok) }
+        function onBluetoothResult(ok, message) { root.showToast(message, ok) }
         function onPowerResult(ok, message) { root.showToast(message, ok) }
         function onPowerProfileResult(ok, message) { root.showToast(message, ok) }
         function onAudioResult(ok, message) { root.showToast(message, ok) }
@@ -432,7 +435,7 @@ QW.Window {
             }
         }
 
-        // Left: mark, windows-menu button, recent apps.
+        // Left: windows menu, recent apps.
         Row {
             id: leftRow
             visible: root.barExpanded
@@ -441,25 +444,12 @@ QW.Window {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 4
 
-            Item {
-                width: 16
-                height: 32
-                IconGlyph {
-                    anchors.centerIn: parent
-                    name: "diamond"
-                    width: 16
-                    height: 16
-                    color: Theme.accent
-                }
-            }
-
-            BarButton {
+            RingBadge {
                 id: windowsButton
-                width: 38
                 icon: "windows"
-                trailing: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : "--"
+                button: true
+                badgeText: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : ""
                 active: root.activePanel === "windows"
-                horizontalPadding: 2
                 onClicked: root.togglePanel("windows", windowsButton)
             }
 
@@ -507,6 +497,16 @@ QW.Window {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
+
+            RingBadge {
+                id: bluetoothChip
+                visible: System.bluetoothAvailable
+                icon: "bluetooth"
+                button: true
+                lit: System.bluetoothEnabled
+                active: root.activePanel === "bluetooth"
+                onClicked: root.togglePanel("bluetooth", bluetoothChip)
+            }
 
             RingBadge {
                 id: networkChip
@@ -647,8 +647,7 @@ QW.Window {
             RingBadge {
                 id: powerButton
                 icon: "bolt"
-                value: 0.833
-                startAngle: -Math.PI * 0.9167
+                button: true
                 active: root.activePanel === "power"
                 onClicked: root.togglePanel("power", powerButton)
             }
@@ -699,6 +698,14 @@ QW.Window {
             System.powerAction(action)
             root.closePanels()
         }
+    }
+
+    BluetoothPanel {
+        z: 30
+        isActive: root.activePanel === "bluetooth"
+        x: root.panelX
+        y: root.panelBottom - height
+        onCloseRequested: root.closePanels()
     }
 
     NetworkPanel {

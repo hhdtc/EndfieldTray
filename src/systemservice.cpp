@@ -10,10 +10,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QSet>
 #include <QStandardPaths>
 #include <QSysInfo>
 #include <QtMath>
 #include <QRegularExpression>
+#include <QSet>
 
 #include <algorithm>
 
@@ -104,6 +106,7 @@ SystemService::SystemService(QObject *parent)
     : QObject(parent)
 {
     m_wifiAvailable = !QStandardPaths::findExecutable(QStringLiteral("nmcli")).isEmpty();
+    m_bluetoothAvailable = !QStandardPaths::findExecutable(QStringLiteral("bluetoothctl")).isEmpty();
     m_powerProfileAvailable = !QStandardPaths::findExecutable(QStringLiteral("powerprofilesctl")).isEmpty();
 
     m_audioTimer.setInterval(3000);
@@ -111,6 +114,9 @@ SystemService::SystemService(QObject *parent)
 
     m_netTimer.setInterval(30000);
     connect(&m_netTimer, &QTimer::timeout, this, &SystemService::pollNetwork);
+
+    m_bluetoothTimer.setInterval(20000);
+    connect(&m_bluetoothTimer, &QTimer::timeout, this, &SystemService::pollBluetooth);
 
     m_batteryTimer.setInterval(60000);
     connect(&m_batteryTimer, &QTimer::timeout, this, &SystemService::pollBattery);
@@ -135,6 +141,7 @@ void SystemService::refreshAll()
 {
     pollAudio();
     pollNetwork();
+    pollBluetooth();
     pollBattery();
     refreshNetworks();
     refreshPowerProfile();
@@ -148,13 +155,16 @@ void SystemService::setUiActive(bool active)
     if (active) {
         m_audioTimer.start();
         m_netTimer.start();
+        m_bluetoothTimer.start();
         m_batteryTimer.start();
         pollAudio();
         pollNetwork();
+        pollBluetooth();
         pollBattery();
     } else {
         m_audioTimer.stop();
         m_netTimer.stop();
+        m_bluetoothTimer.stop();
         m_batteryTimer.stop();
     }
 
@@ -164,6 +174,7 @@ void SystemService::setUiActive(bool active)
         m_uiInitialized = true;
         pollAudio();
         pollNetwork();
+        pollBluetooth();
         pollBattery();
     }
 }
@@ -557,6 +568,163 @@ void SystemService::setWifiEnabled(bool enabled)
             } else {
                 Q_EMIT networkResult(false, err.trimmed());
             }
+        });
+}
+
+void SystemService::refreshBluetooth()
+{
+    pollBluetooth();
+}
+
+void SystemService::pollBluetooth()
+{
+    if (!m_bluetoothAvailable || m_bluetoothPollRunning) {
+        return;
+    }
+    m_bluetoothPollRunning = true;
+
+    run(QStringLiteral("bluetoothctl"), {QStringLiteral("show")},
+        [this](int code, const QString &out, const QString &) {
+            if (code == 0) {
+                const QStringList lines = out.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                for (const QString &rawLine : lines) {
+                    const QString line = rawLine.trimmed();
+                    if (line.startsWith(QLatin1String("Powered:"))) {
+                        m_bluetoothEnabled = line.endsWith(QLatin1String("yes"));
+                    } else if (line.startsWith(QLatin1String("Discovering:"))) {
+                        m_bluetoothDiscovering = line.endsWith(QLatin1String("yes"));
+                    }
+                }
+            }
+
+            run(QStringLiteral("bluetoothctl"),
+                {QStringLiteral("devices"), QStringLiteral("Connected")},
+                [this](int connectedCode, const QString &connectedOut, const QString &) {
+                    QSet<QString> connected;
+                    if (connectedCode == 0) {
+                        const QStringList lines = connectedOut.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                        for (const QString &line : lines) {
+                            const QStringList fields = line.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                            if (fields.size() >= 2 && fields.first() == QLatin1String("Device")) {
+                                connected.insert(fields.at(1).toUpper());
+                            }
+                        }
+                    }
+
+                    run(QStringLiteral("bluetoothctl"), {QStringLiteral("devices")},
+                        [this, connected](int devicesCode, const QString &devicesOut, const QString &) {
+                            QVariantList devices;
+                            if (devicesCode == 0) {
+                                const QStringList lines = devicesOut.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                                for (const QString &line : lines) {
+                                    const QStringList fields = line.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                                    if (fields.size() < 2 || fields.first() != QLatin1String("Device")) {
+                                        continue;
+                                    }
+                                    const QString address = fields.at(1);
+                                    QString name = fields.size() > 2
+                                        ? fields.mid(2).join(QLatin1Char(' '))
+                                        : address;
+                                    QVariantMap entry;
+                                    entry.insert(QStringLiteral("address"), address);
+                                    entry.insert(QStringLiteral("name"), name);
+                                    entry.insert(QStringLiteral("connected"), connected.contains(address.toUpper()));
+                                    devices.append(entry);
+                                }
+                            }
+
+                            std::sort(devices.begin(), devices.end(), [](const QVariant &a, const QVariant &b) {
+                                const QVariantMap left = a.toMap();
+                                const QVariantMap right = b.toMap();
+                                const bool leftConnected = left.value(QStringLiteral("connected")).toBool();
+                                const bool rightConnected = right.value(QStringLiteral("connected")).toBool();
+                                if (leftConnected != rightConnected) {
+                                    return leftConnected;
+                                }
+                                return left.value(QStringLiteral("name")).toString().localeAwareCompare(
+                                           right.value(QStringLiteral("name")).toString()) < 0;
+                            });
+
+                            m_bluetoothConnected = !connected.isEmpty();
+                            if (m_bluetoothDevices != devices) {
+                                m_bluetoothDevices = devices;
+                                Q_EMIT bluetoothDevicesChanged();
+                            }
+                            m_bluetoothPollRunning = false;
+                            Q_EMIT bluetoothChanged();
+                        });
+                });
+        });
+}
+
+void SystemService::setBluetoothEnabled(bool enabled)
+{
+    if (!m_bluetoothAvailable) {
+        Q_EMIT bluetoothResult(false, QStringLiteral("未找到 bluetoothctl"));
+        return;
+    }
+    run(QStringLiteral("bluetoothctl"),
+        {QStringLiteral("power"), enabled ? QStringLiteral("on") : QStringLiteral("off")},
+        [this, enabled](int code, const QString &, const QString &err) {
+            if (code != 0) {
+                Q_EMIT bluetoothResult(false, err.trimmed().isEmpty() ? QStringLiteral("无法切换蓝牙") : err.trimmed());
+                return;
+            }
+            m_bluetoothEnabled = enabled;
+            Q_EMIT bluetoothChanged();
+            Q_EMIT bluetoothResult(true, enabled ? QStringLiteral("蓝牙已开启") : QStringLiteral("蓝牙已关闭"));
+            QTimer::singleShot(500, this, &SystemService::pollBluetooth);
+        });
+}
+
+void SystemService::scanBluetooth()
+{
+    if (!m_bluetoothAvailable) {
+        return;
+    }
+    if (!m_bluetoothEnabled) {
+        Q_EMIT bluetoothResult(false, QStringLiteral("请先开启蓝牙"));
+        return;
+    }
+    if (m_bluetoothScanRunning) {
+        return;
+    }
+    m_bluetoothScanRunning = true;
+    m_bluetoothDiscovering = true;
+    Q_EMIT bluetoothChanged();
+    Q_EMIT bluetoothResult(true, QStringLiteral("正在扫描附近的蓝牙设备"));
+
+    run(QStringLiteral("bluetoothctl"),
+        {QStringLiteral("--timeout"), QStringLiteral("8"), QStringLiteral("scan"), QStringLiteral("on")},
+        [this](int code, const QString &, const QString &err) {
+            m_bluetoothScanRunning = false;
+            m_bluetoothDiscovering = false;
+            Q_EMIT bluetoothChanged();
+            if (code == 0) {
+                QTimer::singleShot(250, this, &SystemService::pollBluetooth);
+            } else {
+                Q_EMIT bluetoothResult(false, err.trimmed().isEmpty() ? QStringLiteral("扫描失败") : err.trimmed());
+            }
+        });
+}
+
+void SystemService::connectBluetooth(const QString &address)
+{
+    run(QStringLiteral("bluetoothctl"), {QStringLiteral("connect"), address},
+        [this, address](int code, const QString &, const QString &err) {
+            Q_EMIT bluetoothResult(code == 0,
+                                   code == 0 ? QStringLiteral("正在连接蓝牙设备") : err.trimmed());
+            QTimer::singleShot(code == 0 ? 1200 : 250, this, &SystemService::pollBluetooth);
+        });
+}
+
+void SystemService::disconnectBluetooth(const QString &address)
+{
+    run(QStringLiteral("bluetoothctl"), {QStringLiteral("disconnect"), address},
+        [this, address](int code, const QString &, const QString &err) {
+            Q_EMIT bluetoothResult(code == 0,
+                                   code == 0 ? QStringLiteral("已断开蓝牙设备") : err.trimmed());
+            QTimer::singleShot(300, this, &SystemService::pollBluetooth);
         });
 }
 

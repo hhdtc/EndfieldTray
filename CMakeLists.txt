@@ -35,6 +35,7 @@ set(QML_FILES
     qml/panels/BasePanel.qml
     qml/panels/WindowsPanel.qml
     qml/panels/PowerPanel.qml
+    qml/panels/BluetoothPanel.qml
     qml/panels/NetworkPanel.qml
     qml/panels/VolumePanel.qml
     qml/panels/BatteryPanel.qml

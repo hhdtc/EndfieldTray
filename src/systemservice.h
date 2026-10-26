@@ -31,6 +31,12 @@ class SystemService : public QObject
     Q_PROPERTY(bool connecting READ connecting NOTIFY connectingChanged)
     Q_PROPERTY(QVariantList wifiNetworks READ wifiNetworks NOTIFY wifiNetworksChanged)
 
+    Q_PROPERTY(bool bluetoothAvailable READ bluetoothAvailable CONSTANT)
+    Q_PROPERTY(bool bluetoothEnabled READ bluetoothEnabled NOTIFY bluetoothChanged)
+    Q_PROPERTY(bool bluetoothConnected READ bluetoothConnected NOTIFY bluetoothChanged)
+    Q_PROPERTY(bool bluetoothDiscovering READ bluetoothDiscovering NOTIFY bluetoothChanged)
+    Q_PROPERTY(QVariantList bluetoothDevices READ bluetoothDevices NOTIFY bluetoothDevicesChanged)
+
     Q_PROPERTY(bool batteryPresent READ batteryPresent NOTIFY batteryChanged)
     Q_PROPERTY(int batteryPercent READ batteryPercent NOTIFY batteryChanged)
     Q_PROPERTY(QString batteryStatus READ batteryStatus NOTIFY batteryChanged)
@@ -66,6 +72,12 @@ public:
     bool connecting() const { return m_connecting; }
     QVariantList wifiNetworks() const { return m_wifiNetworks; }
 
+    bool bluetoothAvailable() const { return m_bluetoothAvailable; }
+    bool bluetoothEnabled() const { return m_bluetoothEnabled; }
+    bool bluetoothConnected() const { return m_bluetoothConnected; }
+    bool bluetoothDiscovering() const { return m_bluetoothDiscovering; }
+    QVariantList bluetoothDevices() const { return m_bluetoothDevices; }
+
     bool batteryPresent() const { return m_batteryPresent; }
     int batteryPercent() const { return m_batteryPercent; }
     QString batteryStatus() const { return m_batteryStatus; }
@@ -87,6 +99,11 @@ public:
     Q_INVOKABLE void refreshAll();
     Q_INVOKABLE void setUiActive(bool active);
     Q_INVOKABLE void refreshNetworks();
+    Q_INVOKABLE void refreshBluetooth();
+    Q_INVOKABLE void setBluetoothEnabled(bool enabled);
+    Q_INVOKABLE void scanBluetooth();
+    Q_INVOKABLE void connectBluetooth(const QString &address);
+    Q_INVOKABLE void disconnectBluetooth(const QString &address);
     Q_INVOKABLE void refreshPowerProfile();
     Q_INVOKABLE void setPowerProfile(const QString &profile);
     Q_INVOKABLE void refreshAudioSinks();
@@ -110,6 +127,9 @@ Q_SIGNALS:
     void scanningChanged();
     void connectingChanged();
     void wifiNetworksChanged();
+    void bluetoothChanged();
+    void bluetoothDevicesChanged();
+    void bluetoothResult(bool ok, const QString &message);
     void batteryChanged();
     void networkResult(bool ok, const QString &message);
     void powerResult(bool ok, const QString &message);
@@ -123,6 +143,7 @@ Q_SIGNALS:
 private:
     void pollAudio();
     void pollNetwork();
+    void pollBluetooth();
     void pollBattery();
     void applyVolume();
     void run(const QString &program,
@@ -134,6 +155,7 @@ private:
 
     QTimer m_audioTimer;
     QTimer m_netTimer;
+    QTimer m_bluetoothTimer;
     QTimer m_batteryTimer;
     bool m_uiActive = false;
     bool m_uiInitialized = false;
@@ -157,6 +179,14 @@ private:
     bool m_scanning = false;
     bool m_connecting = false;
     QVariantList m_wifiNetworks;
+
+    bool m_bluetoothAvailable = false;
+    bool m_bluetoothEnabled = false;
+    bool m_bluetoothConnected = false;
+    bool m_bluetoothDiscovering = false;
+    bool m_bluetoothPollRunning = false;
+    bool m_bluetoothScanRunning = false;
+    QVariantList m_bluetoothDevices;
 
     bool m_powerProfileAvailable = false;
     QString m_powerProfile;

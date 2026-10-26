@@ -47,6 +47,19 @@ Canvas {
         ctx.lineJoin = "round"
 
         switch (root.name) {
+        case "bluetooth":
+            ctx.beginPath()
+            ctx.moveTo(12, 3)
+            ctx.lineTo(17, 8)
+            ctx.lineTo(7, 18)
+            ctx.moveTo(12, 3)
+            ctx.lineTo(7, 8)
+            ctx.lineTo(17, 18)
+            ctx.moveTo(12, 3)
+            ctx.lineTo(12, 21)
+            ctx.stroke()
+            break
+
         case "wifi":
             for (const r of [9.5, 6.4, 3.2]) {
                 ctx.beginPath()

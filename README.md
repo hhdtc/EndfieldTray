@@ -15,9 +15,10 @@
 - **窗口二级菜单**：读取 KWin 当前窗口；点击切换，中键最小化，悬停显示关闭按钮。窗口数据来自 Plasma 的 `LibTaskManager`。
 - **系统托盘**：自带 StatusNotifierItem host，不依赖 Plasma 系统托盘；支持左键激活、右键菜单、DBusMenu 子菜单、托盘抽屉。
 - **Wi-Fi**：读取 NetworkManager；状态栏只显示圆环信号徽章，不显示 SSID；详细面板可扫描、连接（含密码输入）、断开、开关 radio。
+- **蓝牙**：状态栏在 Wi-Fi 左侧显示蓝牙按钮；详细面板可开关适配器、扫描附近设备、连接 / 断开已知设备（BlueZ / `bluetoothctl`）。
 - **音量**：PipeWire / WirePlumber (`wpctl`)，支持滑块、滚轮调节和静音；状态栏用圆环徽章显示音量；详细面板可切换输出设备。
 - **电池**：sysfs `power_supply`；状态栏用圆环徽章显示电量，详细面板显示百分比、充电状态、剩余时间、健康度，并可切换省电 / 平衡 / 性能电源模式（power-profiles-daemon）。
-- **圆环徽章**：WiFi / 音量 / 电池 / 电源采用参考项目的 HUD 徽章样式——深灰圆盘、荧光绿弧形进度、中央图标、圆形端点；电源按钮使用带缺口的圆环加闪电。
+- **圆环徽章**：WiFi / 音量 / 电池采用参考项目的 HUD 进度徽章——深灰圆盘、荧光绿弧形进度、中央图标、圆形端点；窗口、蓝牙和电源是按钮型圆环，外圈只表示按钮边界，不伪装成进度。
 - **扁平外壳**：条和面板都是纯色 `#312F30`，没有外描边、没有顶部高光 / 底部压暗渐变，左右圆帽由同一个圆角矩形绘制。
 
 ![圆环徽章](docs/ring-badges.png)
@@ -58,7 +59,7 @@ sudo pacman -S --needed \
   base-devel cmake ninja \
   qt6-base qt6-declarative qt6-wayland \
   layer-shell-qt plasma-workspace \
-  networkmanager pipewire wireplumber glib2
+  networkmanager pipewire wireplumber bluez-utils glib2
 ```
 
 其中 `plasma-workspace` 提供 `LibTaskManager` 和 Plasma 的窗口任务接口。
@@ -82,7 +83,7 @@ cmake --build build -j"$(nproc)"
 ./build/endfield-tray --no-lock --preview-panel power --screenshot /tmp/power.png
 ```
 
-`--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`tray`、`trayMenu`，以及开发用的 `recent`。
+`--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`bluetooth`、`tray`、`trayMenu`，以及开发用的 `recent`。
 
 ## 安装
 
