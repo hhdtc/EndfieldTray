@@ -389,12 +389,14 @@ void SystemService::parseWifiList(const QString &output, bool replaceNetworks)
         if (fields.size() < 4) {
             continue;
         }
-        const bool active = fields.at(0).trimmed() == QLatin1String("*")
-            || fields.at(0).trimmed().contains(QLatin1Char('*'));
         const QString ssid = fields.at(1);
         if (ssid.isEmpty()) {
             continue;
         }
+        // Depending on the nmcli version the IN-USE column is either "*" or
+        // empty. Fall back to the SSID of the connected device as well.
+        const bool active = fields.at(0).trimmed().contains(QLatin1Char('*'))
+            || (!m_wifiSsid.isEmpty() && ssid == m_wifiSsid);
         bool ok = false;
         const int signal = qBound(0, fields.at(2).toInt(&ok), 100);
         QString security = fields.at(3).trimmed();

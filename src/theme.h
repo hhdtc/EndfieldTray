@@ -63,7 +63,7 @@ public:
     QString mono() const { return m_mono; }
     QString cjk() const { return m_cjk; }
     int barHeight() const { return 44; }
-    int barWidth() const { return 620; }
+    int barWidth() const { return 580; }
 
     void setLoadedFamilies(const QStringList &families);
 

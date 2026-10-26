@@ -30,6 +30,7 @@ set(QML_FILES
     qml/components/EmptyState.qml
     qml/components/RecentAppButton.qml
     qml/components/GroupPopup.qml
+    qml/components/RingBadge.qml
 
     qml/panels/BasePanel.qml
     qml/panels/WindowsPanel.qml

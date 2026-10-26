@@ -36,6 +36,7 @@ QW.Window {
 
     property bool groupPopupVisible: false
     property bool groupPopupHovered: false
+    property string previewPanelName: ""
     property var groupWindows: []
     property string groupAppName: ""
     property int groupPopupGroup: -1
@@ -240,6 +241,22 @@ QW.Window {
     }
 
     Timer {
+        id: previewPanelTimer
+        interval: 500
+        onTriggered: {
+            const anchors = {
+                windows: windowsButton,
+                power: powerButton,
+                network: networkChip,
+                volume: volumeChip,
+                battery: batteryChip,
+                tray: trayDrawer
+            }
+            root.togglePanel(root.previewPanelName, anchors[root.previewPanelName] || windowsButton)
+        }
+    }
+
+    Timer {
         id: previewRecentTimer
         interval: 700
         repeat: true
@@ -306,15 +323,8 @@ QW.Window {
                 root.barExpanded = true
                 previewRecentTimer.start()
             } else {
-                const anchors = {
-                    windows: windowsButton,
-                    power: powerButton,
-                    network: networkChip,
-                    volume: volumeChip,
-                    battery: batteryChip,
-                    tray: trayDrawer
-                }
-                root.togglePanel(preview, anchors[preview] || windowsButton)
+                root.previewPanelName = preview
+                previewPanelTimer.start()
             }
         }
     }
@@ -496,33 +506,32 @@ QW.Window {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
 
-            StatusChip {
+            RingBadge {
                 id: networkChip
-                width: 34
-                icon: System.wifiConnected ? "wifi" : (System.wifiEnabled ? "wifi" : "wifi-off")
+                icon: System.wifiConnected ? "wifi" : "wifi-off"
+                value: System.wifiConnected ? System.wifiSignal / 100.0 : 0
                 active: root.activePanel === "network"
                 warning: System.wifiEnabled && !System.wifiConnected
                 onClicked: root.togglePanel("network", networkChip)
             }
 
-            StatusChip {
+            RingBadge {
                 id: volumeChip
                 icon: System.muted ? "volume-mute" : "volume"
-                text: System.volume + "%"
+                value: System.muted ? 0 : System.volume / 100.0
                 active: root.activePanel === "volume"
                 warning: System.muted
                 onClicked: root.togglePanel("volume", volumeChip)
                 onWheeled: wheel => System.adjustVolume(wheel.angleDelta.y > 0 ? 5 : -5)
             }
 
-            StatusChip {
+            RingBadge {
                 id: batteryChip
                 visible: System.batteryPresent
-                icon: System.charging ? "battery-charging" : "battery"
-                text: System.batteryPercent + "%"
+                icon: System.charging ? "bolt" : "battery"
+                value: System.batteryPercent / 100.0
                 active: root.activePanel === "battery"
                 warning: System.batteryPercent <= 18 && !System.charging
-                level: System.batteryPercent / 100.0
                 charging: System.charging
                 onClicked: root.togglePanel("battery", batteryChip)
             }
@@ -633,35 +642,13 @@ QW.Window {
                 }
             }
 
-            Item {
+            RingBadge {
                 id: powerButton
-                width: 32
-                height: 32
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 16
-                    color: powerMouse.containsMouse || root.activePanel === "power"
-                        ? Theme.accent : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
-                    border.width: 1
-                    border.color: Theme.accent
-                }
-
-                IconGlyph {
-                    anchors.centerIn: parent
-                    name: "power"
-                    width: 14
-                    height: 14
-                    color: powerMouse.containsMouse || root.activePanel === "power" ? Theme.bg : Theme.accent
-                }
-
-                MouseArea {
-                    id: powerMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.togglePanel("power", powerButton)
-                }
+                icon: "bolt"
+                value: 0.833
+                startAngle: -Math.PI * 0.9167
+                active: root.activePanel === "power"
+                onClicked: root.togglePanel("power", powerButton)
             }
         }
     }
