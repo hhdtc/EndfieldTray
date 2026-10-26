@@ -100,6 +100,7 @@ QW.Window {
             scheduleCollapse()
         }
         updateInputRegion()
+        Qt.callLater(updateInputRegion)
     }
 
     onClosing: Qt.quit()
@@ -193,6 +194,8 @@ QW.Window {
         expandBar()
         activePanel = name
         panelX = panelXFor(anchor, width)
+        updateInputRegion()
+        Qt.callLater(updateInputRegion)
         Qt.callLater(function() { panelX = panelXFor(anchor, width) })
     }
 
@@ -209,7 +212,10 @@ QW.Window {
             ? Qt.rect(barX + groupPopupX, barY - groupPopupHeight - 8,
                       groupPopupWidth, groupPopupHeight + 8)
             : Qt.rect(0, 0, 0, 0)
-        InputRegion.apply(barRect, popupRect, overlay)
+        // Use the raw panel state instead of the overlay binding: when called
+        // from onActivePanelChanged the binding may not have been evaluated
+        // yet, leaving the transparent layer input-region as bar-only.
+        InputRegion.apply(barRect, popupRect, activePanel.length > 0)
     }
 
     function showToast(message, success) {
