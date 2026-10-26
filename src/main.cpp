@@ -20,6 +20,8 @@
 #include <QStandardPaths>
 #include <QTimer>
 
+#include <LayerShellQt/window.h>
+
 #include <memory>
 
 int main(int argc, char **argv)
@@ -119,6 +121,13 @@ int main(int argc, char **argv)
         return 1;
     }
     if (auto *window = qobject_cast<QWindow *>(engine.rootObjects().constFirst())) {
+        // The scope must be set before the platform window exists. "dock" makes
+        // KWin treat the layer surface like a panel, so Show Desktop does not
+        // hide it.
+        if (auto *layerShell = LayerShellQt::Window::get(window)) {
+            layerShell->setScope(QStringLiteral("dock"));
+        }
+        window->show();
         inputRegion.setWindow(window);
     }
 

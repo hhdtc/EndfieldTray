@@ -11,7 +11,8 @@ import "panels"
 QW.Window {
     id: root
 
-    visible: true
+    // main.cpp shows the window after setting the LayerShell scope.
+    visible: false
     color: "transparent"
     flags: Qt.FramelessWindowHint
     title: "Endfield Tray"
@@ -51,6 +52,7 @@ QW.Window {
     property string dateText: "--- / -- ---"
 
     readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
+
     // The layer surface is always screen-sized; input is restricted to the
     // visible bar/popup/panel through InputRegion, so transparent pixels never
     // swallow clicks.
