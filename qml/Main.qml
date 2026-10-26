@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Effects
 import QtQuick.Window 2.15 as QW
 import QtQuick.Controls
 import org.kde.layershell as LayerShell
@@ -409,6 +410,7 @@ QW.Window {
             accentFrom: 0.04
             accentTo: 0.10
             decorations: root.barExpanded
+            shadow: false
         }
 
         // Collapsed state: time only.
@@ -654,6 +656,18 @@ QW.Window {
                 onClicked: root.togglePanel("power", powerButton)
             }
         }
+    }
+
+    // Bar shadow sits outside the clipped bar content so its soft edge is not
+    // cut off during the width animation.
+    RectangularShadow {
+        anchors.fill: bar
+        radius: bar.height / 2
+        blur: 18
+        spread: 1
+        color: "#55000000"
+        offset: Qt.vector2d(0, 3)
+        z: 19
     }
 
     // Hover flyout for a multi-window app group.

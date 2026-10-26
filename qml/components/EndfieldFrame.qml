@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 
 /**
  * Compact rounded technical shell. Flat fill, no outer border and no
@@ -18,6 +19,16 @@ Item {
     property bool hatch: false
     property bool shadow: true
     property bool decorations: true
+
+    RectangularShadow {
+        visible: root.shadow
+        anchors.fill: parent
+        radius: root.radius
+        blur: 18
+        spread: 1
+        color: "#55000000"
+        offset: Qt.vector2d(0, 3)
+    }
 
     Rectangle {
         anchors.fill: parent
