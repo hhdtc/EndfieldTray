@@ -87,6 +87,32 @@ cmake --build build -j"$(nproc)"
 
 `--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`bluetooth`、`tray`、`trayMenu`，以及开发用的 `recent`。
 
+## Homebrew（Linux x86_64）
+
+预编译二进制通过公开 tap 安装，不依赖 Homebrew 构建 Qt：
+
+```bash
+brew tap hhdtc/tap
+brew install endfield-tray
+endfield-tray --autostart enable
+```
+
+查看 / 关闭登录自启动：
+
+```bash
+endfield-tray --autostart status
+endfield-tray --autostart disable
+```
+
+升级：
+
+```bash
+brew update
+brew upgrade endfield-tray
+```
+
+Homebrew 只负责安装二进制；Qt 6 / KDE Plasma / NetworkManager / PipeWire / BlueZ 仍使用系统包（见上方 Arch/CachyOS 依赖）。
+
 ## 开机自启动
 
 安装时使用：
