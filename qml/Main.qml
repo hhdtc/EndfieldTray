@@ -437,7 +437,7 @@ QW.Window {
             }
         }
 
-        // Left: windows menu, recent apps.
+        // Left: windows menu, radios, recent apps.
         Row {
             id: leftRow
             visible: root.barExpanded
@@ -453,6 +453,25 @@ QW.Window {
                 badgeText: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : ""
                 active: root.activePanel === "windows"
                 onClicked: root.togglePanel("windows", windowsButton)
+            }
+
+            RingBadge {
+                id: bluetoothChip
+                visible: System.bluetoothAvailable
+                icon: "bluetooth"
+                button: true
+                lit: System.bluetoothEnabled
+                active: root.activePanel === "bluetooth"
+                onClicked: root.togglePanel("bluetooth", bluetoothChip)
+            }
+
+            RingBadge {
+                id: networkChip
+                icon: System.wifiConnected ? "wifi" : "wifi-off"
+                value: System.wifiConnected ? System.wifiSignal / 100.0 : 0
+                active: root.activePanel === "network"
+                warning: System.wifiEnabled && !System.wifiConnected
+                onClicked: root.togglePanel("network", networkChip)
             }
 
             Row {
@@ -491,7 +510,7 @@ QW.Window {
             }
         }
 
-        // Right: radio, audio, battery, tray, power.
+        // Right: audio, battery, tray, power.
         Row {
             id: rightRow
             visible: root.barExpanded
@@ -499,25 +518,6 @@ QW.Window {
             anchors.rightMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             spacing: 1
-
-            RingBadge {
-                id: bluetoothChip
-                visible: System.bluetoothAvailable
-                icon: "bluetooth"
-                button: true
-                lit: System.bluetoothEnabled
-                active: root.activePanel === "bluetooth"
-                onClicked: root.togglePanel("bluetooth", bluetoothChip)
-            }
-
-            RingBadge {
-                id: networkChip
-                icon: System.wifiConnected ? "wifi" : "wifi-off"
-                value: System.wifiConnected ? System.wifiSignal / 100.0 : 0
-                active: root.activePanel === "network"
-                warning: System.wifiEnabled && !System.wifiConnected
-                onClicked: root.togglePanel("network", networkChip)
-            }
 
             RingBadge {
                 id: volumeChip
