@@ -87,6 +87,29 @@ cmake --build build -j"$(nproc)"
 
 `--preview-panel` 支持 `windows`、`power`、`network`、`volume`、`battery`、`bluetooth`、`tray`、`trayMenu`，以及开发用的 `recent`。
 
+## 开机自启动
+
+安装时使用：
+
+```bash
+./scripts/install.sh --autostart
+```
+
+也可以在安装后随时查看 / 修改：
+
+```bash
+# 查看是否启用
+endfield-tray --autostart status
+
+# 启用（写入 ~/.config/autostart/endfield-tray.desktop）
+endfield-tray --autostart enable
+
+# 禁用
+endfield-tray --autostart disable
+```
+
+这是 KDE 登录后的 XDG autostart，不是系统级 systemd 服务；需要有 Wayland 会话。`--autostart` 在创建 QGuiApplication 之前处理，因此可以在无显示环境/脚本里使用。
+
 ## 安装
 
 ```bash

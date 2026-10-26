@@ -45,6 +45,8 @@ set(QML_FILES
 
 qt_add_executable(endfield-tray
     src/main.cpp
+    src/autostart.h
+    src/autostart.cpp
     src/theme.h
     src/theme.cpp
     src/windowmodel.h

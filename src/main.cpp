@@ -1,3 +1,4 @@
+#include "autostart.h"
 #include "inputregion.h"
 #include "recentappsmodel.h"
 #include "systemservice.h"
@@ -26,6 +27,10 @@
 
 int main(int argc, char **argv)
 {
+    if (const int code = handleAutostartCli(argc, argv); code >= 0) {
+        return code;
+    }
+
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Endfield Tray"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Endfield Tray"));
@@ -41,6 +46,9 @@ int main(int argc, char **argv)
                                       QStringLiteral("Run as a normal window (development / screenshots)."));
     QCommandLineOption noLockOption(QStringLiteral("no-lock"),
                                     QStringLiteral("Allow multiple instances."));
+    QCommandLineOption autostartOption(QStringLiteral("autostart"),
+                                       QStringLiteral("Show or set login autostart (status, enable, disable)."),
+                                       QStringLiteral("action"), QStringLiteral("status"));
     QCommandLineOption previewOption(QStringLiteral("preview-panel"),
                                      QStringLiteral("Open a panel at startup (windows, power, network, volume, battery, tray)."),
                                      QStringLiteral("panel"));
@@ -49,6 +57,7 @@ int main(int argc, char **argv)
                                         QStringLiteral("path"));
     parser.addOption(windowedOption);
     parser.addOption(noLockOption);
+    parser.addOption(autostartOption);
     parser.addOption(previewOption);
     parser.addOption(screenshotOption);
     parser.process(app);
