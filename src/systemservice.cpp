@@ -768,7 +768,26 @@ void SystemService::setAudioSink(const QString &sinkName)
             }
             m_audioSinkName = sinkName;
             Q_EMIT audioResult(true, QStringLiteral("输出设备已切换"));
-            QTimer::singleShot(120, this, [this] { pollAudio(); refreshAudioSinks(); });
+
+            // Move already-playing streams as well, not just the default for new
+            // streams. This mirrors what users expect from a KDE device picker.
+            run(QStringLiteral("pactl"),
+                {QStringLiteral("list"), QStringLiteral("short"), QStringLiteral("sink-inputs")},
+                [this, sinkName](int listCode, const QString &out, const QString &) {
+                    if (listCode == 0) {
+                        const QStringList lines = out.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                        for (const QString &line : lines) {
+                            const QStringList fields = line.split(QLatin1Char('\t'));
+                            if (fields.isEmpty() || fields.first().isEmpty()) {
+                                continue;
+                            }
+                            run(QStringLiteral("pactl"),
+                                {QStringLiteral("move-sink-input"), fields.first(), sinkName},
+                                [](int, const QString &, const QString &) {});
+                        }
+                    }
+                    QTimer::singleShot(150, this, [this] { pollAudio(); refreshAudioSinks(); });
+                });
         });
 }
 
