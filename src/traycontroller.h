@@ -8,9 +8,9 @@ typedef struct _GDBusConnection GDBusConnection;
 /**
  * Minimal StatusNotifierItem companion.
  *
- * The tray icons themselves are provided by Plasma's StatusNotifierModel in
- * QML. This object only performs the two things the model cannot: sending
- * activation requests and importing a com.canonical.dbusmenu tree.
+ * Tray icons and item metadata are provided by TrayModel; this object only
+ * performs the two things the model cannot: sending activation requests and
+ * importing a com.canonical.dbusmenu tree.
  *
  * Menu layouts are read with GDBus because QtDBus cannot represent the
  * `(ia{sv}av)` recursive variant used by DBusMenu in every environment.
