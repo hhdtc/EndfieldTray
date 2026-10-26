@@ -53,6 +53,22 @@ QW.Window {
     property string dateText: "--- / -- ---"
 
     readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
+    readonly property bool hudHidden: WindowModel.fullScreenActive
+
+    onHudHiddenChanged: {
+        if (hudHidden) {
+            hideGroup()
+            closePanels()
+            barExpanded = false
+            collapseTimer.stop()
+            System.setUiActive(false)
+            TrayModel.setActive(false)
+            RecentApps.setActive(false)
+            updateInputRegion()
+        } else {
+            updateInputRegion()
+        }
+    }
 
     // The layer surface is always screen-sized; input is restricted to the
     // visible bar/popup/panel through InputRegion, so transparent pixels never
@@ -181,6 +197,10 @@ QW.Window {
     }
 
     function updateInputRegion() {
+        if (hudHidden) {
+            InputRegion.apply(Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), false)
+            return
+        }
         const finalWidth = barExpanded ? expandedWidth : collapsedWidth
         const barX = (screenW - finalWidth) / 2
         const barY = height - barHeight - bottomGap
@@ -372,6 +392,7 @@ QW.Window {
     // ---------------------------------------------------------------------
     Item {
         id: bar
+        visible: !root.hudHidden
         width: root.barWidth
         height: root.barHeight
         anchors.horizontalCenter: parent.horizontalCenter
@@ -661,6 +682,7 @@ QW.Window {
     // Bar shadow sits outside the clipped bar content so its soft edge is not
     // cut off during the width animation.
     RectangularShadow {
+        visible: !root.hudHidden
         anchors.fill: bar
         radius: bar.height / 2
         blur: 18

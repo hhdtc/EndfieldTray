@@ -18,6 +18,7 @@ class WindowModel : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
+    Q_PROPERTY(bool fullScreenActive READ fullScreenActive NOTIFY fullScreenActiveChanged)
 
 public:
     enum Role {
@@ -29,12 +30,14 @@ public:
         ClosableRole,
         DesktopRole,
         AppIdRole,
+        FullScreenRole,
     };
     Q_ENUM(Role)
 
     explicit WindowModel(QObject *parent = nullptr);
 
     int count() const;
+    bool fullScreenActive() const { return m_fullScreenActive; }
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -45,12 +48,16 @@ public:
 
 Q_SIGNALS:
     void countChanged();
+    void fullScreenActiveChanged();
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 
 private:
     QModelIndex sourceIndexForRow(int row) const;
+    void updateFullScreenActive();
+
+    bool m_fullScreenActive = false;
 
     TaskManager::TasksModel *m_tasks;
 };

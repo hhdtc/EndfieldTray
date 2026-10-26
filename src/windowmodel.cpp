@@ -29,6 +29,13 @@ WindowModel::WindowModel(QObject *parent)
     connect(this, &QAbstractItemModel::rowsInserted, this, &WindowModel::countChanged);
     connect(this, &QAbstractItemModel::rowsRemoved, this, &WindowModel::countChanged);
     connect(this, &QAbstractItemModel::modelReset, this, &WindowModel::countChanged);
+
+    connect(m_tasks, &QAbstractItemModel::dataChanged, this, &WindowModel::updateFullScreenActive);
+    connect(m_tasks, &QAbstractItemModel::rowsInserted, this, &WindowModel::updateFullScreenActive);
+    connect(m_tasks, &QAbstractItemModel::rowsRemoved, this, &WindowModel::updateFullScreenActive);
+    connect(m_tasks, &QAbstractItemModel::modelReset, this, &WindowModel::updateFullScreenActive);
+    connect(m_tasks, &QAbstractItemModel::layoutChanged, this, &WindowModel::updateFullScreenActive);
+    updateFullScreenActive();
 }
 
 int WindowModel::count() const
@@ -78,6 +85,8 @@ QVariant WindowModel::data(const QModelIndex &index, int role) const
     }
     case AppIdRole:
         return src.data(AbstractTasksModel::AppId).toString();
+    case FullScreenRole:
+        return src.data(AbstractTasksModel::IsFullScreen).toBool();
     default:
         return QSortFilterProxyModel::data(index, role);
     }
@@ -94,7 +103,30 @@ QHash<int, QByteArray> WindowModel::roleNames() const
         {ClosableRole, "closable"},
         {DesktopRole, "desktop"},
         {AppIdRole, "appId"},
+        {FullScreenRole, "fullScreen"},
     };
+}
+
+void WindowModel::updateFullScreenActive()
+{
+    bool active = false;
+    for (int row = 0; row < m_tasks->rowCount(); ++row) {
+        const QModelIndex idx = m_tasks->index(row, 0);
+        if (!idx.isValid()
+            || !idx.data(AbstractTasksModel::IsWindow).toBool()
+            || idx.data(AbstractTasksModel::SkipTaskbar).toBool()
+            || !idx.data(AbstractTasksModel::IsFullScreen).toBool()
+            || !idx.data(AbstractTasksModel::IsActive).toBool()
+            || idx.data(AbstractTasksModel::IsMinimized).toBool()) {
+            continue;
+        }
+        active = true;
+        break;
+    }
+    if (m_fullScreenActive != active) {
+        m_fullScreenActive = active;
+        Q_EMIT fullScreenActiveChanged();
+    }
 }
 
 QModelIndex WindowModel::sourceIndexForRow(int row) const
