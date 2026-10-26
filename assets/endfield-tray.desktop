@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Endfield Tray
+Name[zh_CN]=终末地悬浮任务栏
+GenericName=Desktop Dock
+GenericName[zh_CN]=桌面悬浮任务栏
+Comment=Compact Endfield-inspired floating taskbar for KDE Wayland
+Comment[zh_CN]=为 KDE Wayland 设计的紧凑终末地风格悬浮任务栏
+Exec=endfield-tray
+Icon=endfield-tray
+Terminal=false
+Categories=Utility;System;
+StartupNotify=false
+X-KDE-StartupNotify=false
+StartupWMClass=endfield-tray
