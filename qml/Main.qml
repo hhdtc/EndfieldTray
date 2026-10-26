@@ -201,7 +201,7 @@ QW.Window {
 
     function updateInputRegion() {
         if (hudHidden) {
-            InputRegion.apply(Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), false)
+            InputRegion.apply(Qt.rect(0, 0, 0, 0), Qt.rect(0, 0, 0, 0), false, Qt.rect(0, 0, 0, 0))
             return
         }
         const finalWidth = barExpanded ? expandedWidth : collapsedWidth
@@ -212,10 +212,14 @@ QW.Window {
             ? Qt.rect(barX + groupPopupX, barY - groupPopupHeight - 8,
                       groupPopupWidth, groupPopupHeight + 8)
             : Qt.rect(0, 0, 0, 0)
-        // Use the raw panel state instead of the overlay binding: when called
-        // from onActivePanelChanged the binding may not have been evaluated
-        // yet, leaving the transparent layer input-region as bar-only.
-        InputRegion.apply(barRect, popupRect, activePanel.length > 0)
+        // While the bar is hovered (i.e. before a click can open a panel), give
+        // the surface the full input region. Doing this only after the click
+        // is too late on some compositor grab paths and lets the panel click
+        // fall through to the window behind.
+        const wantsFullInput = activePanel.length > 0
+            || groupPopupVisible
+            || (barExpanded && barHover.hovered)
+        InputRegion.apply(barRect, popupRect, wantsFullInput, Qt.rect(0, 0, screenW, screenH))
     }
 
     function showToast(message, success) {
@@ -418,6 +422,8 @@ QW.Window {
                 } else if (!root.groupPopupVisible) {
                     root.scheduleCollapse()
                 }
+                root.updateInputRegion()
+                Qt.callLater(root.updateInputRegion)
             }
         }
 
@@ -427,7 +433,11 @@ QW.Window {
             anchors.fill: parent
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
-            onEntered: root.expandBar()
+            onEntered: {
+                root.expandBar()
+                root.updateInputRegion()
+                Qt.callLater(root.updateInputRegion)
+            }
             onClicked: root.expandBar()
         }
 

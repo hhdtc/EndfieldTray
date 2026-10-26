@@ -20,11 +20,12 @@ void InputRegion::setWindow(QWindow *window)
     update();
 }
 
-void InputRegion::apply(const QRect &barRect, const QRect &popupRect, bool fullScreen)
+void InputRegion::apply(const QRect &barRect, const QRect &popupRect, bool fullScreen, const QRect &fullRect)
 {
     m_barRect = barRect;
     m_popupRect = popupRect;
     m_fullScreen = fullScreen;
+    m_fullRect = fullRect;
     update();
 }
 
@@ -56,7 +57,8 @@ void InputRegion::update()
         // Use an explicit full-window region instead of a null (infinite)
         // region. It is more reliable across compositor updates when a panel
         // opens over the full-screen transparent layer.
-        wl_region_add(region, 0, 0, m_window->width(), m_window->height());
+        const QRect full = m_fullRect.isValid() ? m_fullRect : QRect(0, 0, m_window->width(), m_window->height());
+        wl_region_add(region, full.x(), full.y(), full.width(), full.height());
     } else {
         if (!m_barRect.isEmpty()) {
             wl_region_add(region, m_barRect.x(), m_barRect.y(), m_barRect.width(), m_barRect.height());
