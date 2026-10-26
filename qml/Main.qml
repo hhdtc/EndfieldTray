@@ -365,6 +365,16 @@ QW.Window {
             }
         }
 
+        // Click fallback in case the compositor is slow to deliver the first
+        // hover after the input region changes.
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton
+            onEntered: root.expandBar()
+            onClicked: root.expandBar()
+        }
+
         EndfieldFrame {
             anchors.fill: parent
             radius: root.barHeight / 2
