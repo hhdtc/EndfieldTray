@@ -62,7 +62,7 @@ QW.Window {
     LayerShell.Window.anchors: LayerShell.Window.AnchorBottom
     LayerShell.Window.layer: LayerShell.Window.LayerOverlay
     LayerShell.Window.exclusionZone: 0
-    LayerShell.Window.scope: "endfield-tray"
+    LayerShell.Window.scope: "dock"
     LayerShell.Window.activateOnShow: false
     LayerShell.Window.wantsToBeOnActiveScreen: false
     LayerShell.Window.keyboardInteractivity: overlay
