@@ -228,6 +228,13 @@ QW.Window {
     onHeightChanged: updateInputRegion()
 
     Timer {
+        id: inputRegionRefreshTimer
+        interval: 250
+        running: true
+        onTriggered: root.updateInputRegion()
+    }
+
+    Timer {
         id: previewRecentTimer
         interval: 700
         repeat: true
