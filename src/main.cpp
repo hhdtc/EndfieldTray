@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Endfield Tray"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Endfield Tray"));
-    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.17"));
+    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.18"));
     QGuiApplication::setOrganizationName(QStringLiteral("EndfieldTray"));
     QGuiApplication::setDesktopFileName(QStringLiteral("endfield-tray"));
 

@@ -522,7 +522,7 @@ QW.Window {
         onTriggered: {
             root.capsuleOsdVisible = true
             root.capsuleOsdOpacity = 1
-            root.capsuleOsdHoldTimer.restart()
+            capsuleOsdHoldTimer.restart()
         }
     }
 
