@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 import "../components"
 
 BasePanel {
@@ -290,30 +289,43 @@ BasePanel {
                     spacing: 8
                     width: parent.width
 
-                    TextField {
-                        id: passwordField
+                    Rectangle {
                         width: parent.width - connectButton.width - 8
                         height: 32
-                        placeholderText: "Wi-Fi 密码"
-                        placeholderTextColor: Theme.textFaint
-                        echoMode: TextInput.Password
-                        color: Theme.text
-                        selectionColor: Theme.accentDim
-                        selectedTextColor: Theme.bg
-                        font.family: Theme.mono
-                        font.pixelSize: 11
-                        leftPadding: 10
-                        rightPadding: 10
-                        background: Rectangle {
-                            color: Theme.bg
-                            border.width: 1
-                            border.color: passwordField.activeFocus ? Theme.accent : Theme.lineBright
-                        }
-                        onAccepted: {
-                            if (text.length > 0) {
-                                System.connectWifi(root.selectedSsid, text)
-                                root.selectedSsid = ""
+                        color: Theme.bg
+                        border.width: 1
+                        border.color: passwordField.activeFocus ? Theme.accent : Theme.lineBright
+
+                        TextInput {
+                            id: passwordField
+                            anchors.fill: parent
+                            anchors.leftMargin: 10
+                            anchors.rightMargin: 10
+                            verticalAlignment: TextInput.AlignVCenter
+                            echoMode: TextInput.Password
+                            color: Theme.text
+                            selectionColor: Theme.accentDim
+                            selectedTextColor: Theme.bg
+                            font.family: Theme.mono
+                            font.pixelSize: 11
+                            selectByMouse: true
+                            onAccepted: {
+                                if (text.length > 0) {
+                                    System.connectWifi(root.selectedSsid, text)
+                                    root.selectedSsid = ""
+                                }
                             }
+                        }
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.leftMargin: 10
+                            visible: passwordField.text.length === 0
+                            text: "Wi-Fi 密码"
+                            color: Theme.textFaint
+                            font.family: Theme.mono
+                            font.pixelSize: 11
                         }
                     }
 

@@ -16,7 +16,6 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQmlPropertyMap>
-#include <QQuickStyle>
 #include <QQuickWindow>
 #include <QStandardPaths>
 #include <QTimer>
@@ -34,7 +33,7 @@ int main(int argc, char **argv)
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Endfield Tray"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Endfield Tray"));
-    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.4"));
+    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.5"));
     QGuiApplication::setOrganizationName(QStringLiteral("EndfieldTray"));
     QGuiApplication::setDesktopFileName(QStringLiteral("endfield-tray"));
 
@@ -72,7 +71,6 @@ int main(int argc, char **argv)
         }
     }
 
-    QQuickStyle::setStyle(QStringLiteral("Basic"));
     QIcon::setThemeName(QStringLiteral("breeze"));
     QIcon::setFallbackThemeName(QStringLiteral("hicolor"));
 
@@ -126,6 +124,7 @@ int main(int argc, char **argv)
                      [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);
 
     engine.loadFromModule(QStringLiteral("Endfield"), QStringLiteral("Main"));
+
     if (engine.rootObjects().isEmpty()) {
         return 1;
     }

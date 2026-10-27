@@ -3,7 +3,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Effects
 import QtQuick.Window 2.15 as QW
-import QtQuick.Controls
 import org.kde.layershell as LayerShell
 import org.kde.kirigami as Kirigami
 import "components"
@@ -23,6 +22,9 @@ QW.Window {
     readonly property int screenW: screenInfo ? screenInfo.width : 1920
     readonly property int screenH: screenInfo ? screenInfo.height : 1080
     readonly property int expandedWidth: Math.min(Theme.barWidth, screenW - 48)
+    // The tallest panel is 470px; this is enough for the bar and all panels.
+    // Keeping the transparent layer shorter saves a large full-screen buffer.
+    readonly property int hudHeight: Math.min(screenH, 620)
     readonly property int collapsedWidth: 108
     readonly property int barHeight: Theme.barHeight
     readonly property int bottomGap: 10
@@ -76,7 +78,7 @@ QW.Window {
     // visible bar/popup/panel through InputRegion, so transparent pixels never
     // swallow clicks.
     width: screenW
-    height: screenH
+    height: hudHeight
     x: 0
     y: 0
 
@@ -784,88 +786,144 @@ QW.Window {
     }
 
     // ---------------------------------------------------------------------
-    // Secondary panels
+    // Secondary panels are loaded on demand. Keeping eight full panel trees
+    // alive for a collapsed bar costs several megabytes of QML objects and
+    // delegate caches for no benefit.
     // ---------------------------------------------------------------------
-    WindowsPanel {
+    Loader {
+        width: 500
+        height: 380
         z: 30
-        isActive: root.activePanel === "windows"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-    }
-
-    PowerPanel {
-        z: 30
-        isActive: root.activePanel === "power"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-        onPowerRequested: (action, label) => {
-            System.powerAction(action)
-            root.closePanels()
+        active: root.activePanel === "windows"
+        sourceComponent: Component {
+            WindowsPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+            }
         }
     }
 
-    BluetoothPanel {
+    Loader {
+        width: 360
+        height: 415
         z: 30
-        isActive: root.activePanel === "bluetooth"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-    }
-
-    NetworkPanel {
-        z: 30
-        isActive: root.activePanel === "network"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-        onKeyboardRequested: requested => root.keyboardRequested = requested
-    }
-
-    VolumePanel {
-        z: 30
-        isActive: root.activePanel === "volume"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-    }
-
-    BatteryPanel {
-        z: 30
-        isActive: root.activePanel === "battery"
-        x: root.panelX
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
-    }
-
-    TrayPanel {
-        id: trayPanel
-        z: 30
-        isActive: root.activePanel === "tray"
-        x: root.panelX
-        y: root.panelBottom - height
-        trayModel: TrayModel
-        onCloseRequested: root.closePanels()
-        onItemActivated: (service, button) => {
-            TrayMenu.activate(service, button)
-            root.closePanels()
-        }
-        onMenuRequested: (service, xInPanel) => {
-            root.openTrayMenu(service, trayPanel.x + xInPanel)
+        active: root.activePanel === "power"
+        sourceComponent: Component {
+            PowerPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+                onPowerRequested: (action, label) => {
+                    System.powerAction(action)
+                    root.closePanels()
+                }
+            }
         }
     }
 
-    TrayMenuPanel {
+    Loader {
+        width: 390
+        height: 430
         z: 30
-        id: trayMenuPanel
-        service: root.trayService
-        rootItems: root.trayItems
-        visible: root.activePanel === "trayMenu"
-        opacity: visible ? 1 : 0
-        x: Math.max(10, Math.min(root.width - width - 10, root.trayAnchorX - width + 30))
-        y: root.panelBottom - height
-        onCloseRequested: root.closePanels()
+        active: root.activePanel === "bluetooth"
+        sourceComponent: Component {
+            BluetoothPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+            }
+        }
+    }
+
+    Loader {
+        width: 430
+        height: 470
+        z: 30
+        active: root.activePanel === "network"
+        sourceComponent: Component {
+            NetworkPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+                onKeyboardRequested: requested => root.keyboardRequested = requested
+            }
+        }
+    }
+
+    Loader {
+        width: 360
+        height: 440
+        z: 30
+        active: root.activePanel === "volume"
+        sourceComponent: Component {
+            VolumePanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+            }
+        }
+    }
+
+    Loader {
+        width: 390
+        height: 410
+        z: 30
+        active: root.activePanel === "battery"
+        sourceComponent: Component {
+            BatteryPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+            }
+        }
+    }
+
+    Loader {
+        width: 410
+        height: 270
+        z: 30
+        active: root.activePanel === "tray"
+        sourceComponent: Component {
+            TrayPanel {
+                isActive: true
+                x: root.panelX
+                y: root.panelBottom - height
+                trayModel: TrayModel
+                onCloseRequested: root.closePanels()
+                onItemActivated: (service, button) => {
+                    TrayMenu.activate(service, button)
+                    root.closePanels()
+                }
+                onMenuRequested: (service, xInPanel) => {
+                    root.openTrayMenu(service, root.panelX + xInPanel)
+                }
+            }
+        }
+    }
+
+    Loader {
+        width: 230
+        height: 360
+        z: 30
+        active: root.activePanel === "trayMenu"
+        sourceComponent: Component {
+            TrayMenuPanel {
+                service: root.trayService
+                rootItems: root.trayItems
+                visible: true
+                opacity: 1
+                x: Math.max(10, Math.min(root.width - width - 10, root.trayAnchorX - width + 30))
+                y: root.panelBottom - height
+                onCloseRequested: root.closePanels()
+            }
+        }
     }
 
     Toast {
