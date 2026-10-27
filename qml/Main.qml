@@ -21,11 +21,19 @@ QW.Window {
     readonly property var screenInfo: root.screen
     readonly property int screenW: screenInfo ? screenInfo.width : 1920
     readonly property int screenH: screenInfo ? screenInfo.height : 1080
-    readonly property int expandedWidth: Math.min(Theme.barWidth, screenW - 48)
+    readonly property real expandedWidth: alignedBarWidth(Math.min(Theme.barWidth, screenW - 48))
     // The tallest panel is 470px; this is enough for the bar and all panels.
     // Keeping the transparent layer shorter saves a large full-screen buffer.
     readonly property int hudHeight: Math.min(screenH, 620)
-    readonly property int collapsedWidth: 108
+    // Align the physical bar width to an even pixel count. At 125% scaling an
+    // odd physical width leaves both end caps on half pixels, which makes one
+    // side look softer/cut depending on the compositor's sampling.
+    function alignedBarWidth(base) {
+        const dpr = root.screen ? root.screen.devicePixelRatio : 1
+        return Math.round(base * dpr / 2) * 2 / dpr
+    }
+
+    readonly property real collapsedWidth: alignedBarWidth(108)
     readonly property int barHeight: Theme.barHeight
     readonly property int bottomGap: 10
     readonly property bool overlay: activePanel.length > 0
@@ -61,7 +69,7 @@ QW.Window {
     property real clockOpacity: 1
     property string capsuleOsdKind: "volume"
 
-    readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
+    readonly property real barWidth: barExpanded ? expandedWidth : collapsedWidth
     readonly property bool hudHidden: WindowModel.fullScreenActive
 
     onHudHiddenChanged: {
@@ -143,6 +151,8 @@ QW.Window {
     }
 
     function scheduleCollapse() {
+        if (App.previewPanel === "expanded")
+            return
         if (!overlay && !groupPopupVisible)
             collapseTimer.restart()
     }
@@ -553,7 +563,6 @@ QW.Window {
         anchors.horizontalCenter: parent.horizontalCenter
         y: root.height - root.barHeight - root.bottomGap
         z: 20
-        clip: true
 
         Behavior on width {
             NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
@@ -594,6 +603,14 @@ QW.Window {
             decorations: root.barExpanded
             shadow: false
         }
+
+        // Content is clipped to the capsule, while the rounded frame itself
+        // is not clipped by the bar's bounding rectangle. That keeps both
+        // antialiased end caps symmetric.
+        Item {
+            id: barContent
+            anchors.fill: parent
+            clip: true
 
         // Collapsed state: time only. The volume OSD cross-fades over it.
         Column {
@@ -941,6 +958,7 @@ QW.Window {
                 active: root.activePanel === "power"
                 onClicked: root.togglePanel("power", powerButton)
             }
+        }
         }
     }
 
