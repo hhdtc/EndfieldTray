@@ -50,7 +50,7 @@ int main(int argc, char **argv)
                                        QStringLiteral("Show or set login autostart (status, enable, disable)."),
                                        QStringLiteral("action"), QStringLiteral("status"));
     QCommandLineOption previewOption(QStringLiteral("preview-panel"),
-                                     QStringLiteral("Open a panel at startup (windows, power, network, volume, battery, tray)."),
+                                     QStringLiteral("Open a panel at startup (windows, power, network, volume, battery, tray, expanded)."),
                                      QStringLiteral("panel"));
     QCommandLineOption screenshotOption(QStringLiteral("screenshot"),
                                         QStringLiteral("Grab the QML window to this file and exit (development aid)."),

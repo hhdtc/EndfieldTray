@@ -473,6 +473,8 @@ QW.Window {
             } else if (preview === "recent") {
                 root.barExpanded = true
                 previewRecentTimer.start()
+            } else if (preview === "expanded") {
+                root.barExpanded = true
             } else {
                 root.previewPanelName = preview
                 previewPanelTimer.start()

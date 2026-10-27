@@ -390,7 +390,7 @@ docs/
 
 `--preview-panel` 支持：
 
-`windows`、`power`、`network`、`bluetooth`、`volume`、`battery`、`tray`、`trayMenu`、`recent`
+`windows`、`power`、`network`、`bluetooth`、`volume`、`battery`、`tray`、`trayMenu`、`recent`、`expanded`
 
 ### 录制动画帧
 
