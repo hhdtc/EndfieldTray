@@ -34,7 +34,7 @@ BasePanel {
                 text: "BAT0  /  " + (System.charging ? "CHARGING" : (System.onAc ? "AC CONNECTED" : "DISCHARGING"))
                 color: System.charging ? Theme.accent : Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 0.8
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -53,7 +53,7 @@ BasePanel {
                 text: System.onAc ? "AC POWER" : "BATTERY"
                 color: System.onAc ? Theme.accent : Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.8
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -63,27 +63,28 @@ BasePanel {
             width: parent.width
             height: 98
 
-            Text {
+            Row {
                 anchors.left: parent.left
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: -2
-                text: String(System.batteryPercent).padStart(2, "0")
-                color: root.levelColor
-                font.family: Theme.sans
-                font.pixelSize: 82
-                font.weight: Font.Bold
-                font.letterSpacing: -2
-            }
+                spacing: 7
 
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: System.batteryPercent >= 100 ? 134 : 89
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 18
-                text: "%"
-                color: Theme.accent
-                font.family: Theme.mono
-                font.pixelSize: 16
+                Text {
+                    id: batteryNumber
+                    text: String(System.batteryPercent).padStart(2, "0")
+                    color: root.levelColor
+                    font.family: Theme.cjk
+                    font.pixelSize: 76
+                    font.weight: Font.Bold
+                }
+
+                Text {
+                    text: "%"
+                    color: Theme.accent
+                    font.family: Theme.mono
+                    font.pixelSize: 16
+                    anchors.baseline: batteryNumber.baseline
+                }
             }
 
             Column {
@@ -96,7 +97,7 @@ BasePanel {
                     text: System.charging ? "CHARGING" : (System.onAc ? "EXTERNAL POWER" : "ON BATTERY")
                     color: System.charging ? Theme.accent : Theme.textDim
                     font.family: Theme.mono
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     font.letterSpacing: 0.8
                     anchors.right: parent.right
                 }
@@ -105,7 +106,7 @@ BasePanel {
                     text: System.batteryTime.length > 0 ? (System.charging ? "TO FULL  " : "REMAINING  ") + System.batteryTime : "TIME  --"
                     color: Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     anchors.right: parent.right
                 }
             }
@@ -136,9 +137,7 @@ BasePanel {
             width: parent.width
             height: 20
 
-            Text { text: "0%"; color: Theme.textFaint; font.family: Theme.mono; font.pixelSize: 7 }
             Item { width: parent.width - 44; height: 1 }
-            Text { text: "100%"; color: Theme.textFaint; font.family: Theme.mono; font.pixelSize: 7 }
         }
 
         Item {
@@ -154,7 +153,7 @@ BasePanel {
                     text: "POWER MODE  /  电源模式"
                     color: Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.7
                 }
 
@@ -187,7 +186,7 @@ BasePanel {
                 text: "HEALTH  " + (System.batteryHealth > 0 ? System.batteryHealth + "%" : "--")
                 color: Theme.textDim
                 font.family: Theme.mono
-                font.pixelSize: 9
+                font.pixelSize: 10
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -197,7 +196,7 @@ BasePanel {
                 text: "SOURCE  SYSFS / POWER_SUPPLY"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.4
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -216,7 +215,7 @@ BasePanel {
             }
             color: Theme.textFaint
             font.family: Theme.cjk
-            font.pixelSize: 10
+            font.pixelSize: 11
             horizontalAlignment: Text.AlignRight
         }
     }

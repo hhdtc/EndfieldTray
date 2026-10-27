@@ -39,7 +39,7 @@ Item {
             text: root.appName
             color: Theme.accent
             font.family: Theme.sans
-            font.pixelSize: 11
+            font.pixelSize: 12
             font.weight: Font.DemiBold
             font.letterSpacing: 0.8
             width: parent.width - 42
@@ -51,7 +51,7 @@ Item {
             text: root.windows.length
             color: Theme.textFaint
             font.family: Theme.mono
-            font.pixelSize: 8
+            font.pixelSize: 9
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -103,7 +103,7 @@ Item {
                 text: modelData.title
                 color: modelData.active ? Theme.accent : Theme.textDim
                 font.family: Theme.cjk
-                font.pixelSize: 9
+                font.pixelSize: 10
                 elide: Text.ElideRight
                 anchors.verticalCenter: parent.verticalCenter
             }

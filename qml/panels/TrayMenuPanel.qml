@@ -75,7 +75,7 @@ Item {
                 text: root.service
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 anchors.left: parent.horizontalCenter
                 anchors.leftMargin: 46
                 anchors.verticalCenter: parent.verticalCenter
@@ -172,7 +172,7 @@ Item {
                                 text: columnItem.modelData.title
                                 color: Theme.textFaint
                                 font.family: Theme.mono
-                                font.pixelSize: 8
+                                font.pixelSize: 9
                                 font.letterSpacing: 0.7
                                 elide: Text.ElideRight
                                 width: parent.width - 50
@@ -251,7 +251,7 @@ Item {
                                     color: !modelData.enabled ? Theme.textFaint
                                         : (menuMouse.containsMouse ? Theme.text : Theme.textDim)
                                     font.family: Theme.cjk
-                                    font.pixelSize: 11
+                                    font.pixelSize: 12
                                     elide: Text.ElideRight
                                     anchors.verticalCenter: parent.verticalCenter
                                 }

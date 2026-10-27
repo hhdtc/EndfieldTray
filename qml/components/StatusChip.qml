@@ -50,7 +50,7 @@ Item {
                 text: root.text
                 color: root.warning ? Theme.warning : (root.active ? Theme.accent : Theme.text)
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.weight: Font.Medium
             }
 
@@ -59,7 +59,7 @@ Item {
                 text: root.subtext
                 color: Theme.textFaint
                 font.family: Theme.sans
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.4
             }
         }

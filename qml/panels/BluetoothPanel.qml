@@ -51,7 +51,7 @@ BasePanel {
                     text: "BLUETOOTH  /  ADAPTER"
                     color: System.bluetoothEnabled ? Theme.accent : Theme.textDim
                     font.family: Theme.mono
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     font.letterSpacing: 0.8
                 }
 
@@ -61,7 +61,7 @@ BasePanel {
                         : "ADAPTER OFF"
                     color: Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.4
                 }
             }
@@ -84,7 +84,7 @@ BasePanel {
                 text: "KNOWN DEVICES"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 1
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -95,7 +95,7 @@ BasePanel {
                 text: System.bluetoothDevices.length + " 个设备"
                 color: Theme.accent
                 font.family: Theme.cjk
-                font.pixelSize: 9
+                font.pixelSize: 10
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -153,7 +153,7 @@ BasePanel {
                         text: modelData.name
                         color: modelData.connected ? Theme.accent : Theme.text
                         font.family: Theme.cjk
-                        font.pixelSize: 11
+                        font.pixelSize: 12
                         elide: Text.ElideRight
                     }
 
@@ -161,7 +161,7 @@ BasePanel {
                         text: modelData.address
                         color: Theme.textFaint
                         font.family: Theme.mono
-                        font.pixelSize: 7
+                        font.pixelSize: 8
                     }
                 }
 
@@ -172,7 +172,7 @@ BasePanel {
                     text: modelData.connected ? "CONNECTED" : "CONNECT"
                     color: modelData.connected ? Theme.accent : Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.6
                 }
 
@@ -204,7 +204,7 @@ BasePanel {
             text: "BLUEZ  /  BLUETOOTHCTL"
             color: Theme.textFaint
             font.family: Theme.mono
-            font.pixelSize: 7
+            font.pixelSize: 8
             font.letterSpacing: 0.8
             anchors.right: parent.right
         }

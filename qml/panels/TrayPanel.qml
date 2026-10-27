@@ -34,7 +34,7 @@ BasePanel {
                 text: grid.count + " 个常驻信号"
                 color: Theme.textFaint
                 font.family: Theme.cjk
-                font.pixelSize: 9
+                font.pixelSize: 10
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -44,7 +44,7 @@ BasePanel {
                 text: "CLICK ACTIVATE  /  RIGHT CLICK MENU"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.5
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -113,7 +113,7 @@ BasePanel {
                     text: model.title || "APPLICATION"
                     color: cellMouse.containsMouse ? Theme.text : Theme.textDim
                     font.family: Theme.cjk
-                    font.pixelSize: 9
+                    font.pixelSize: 10
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                 }

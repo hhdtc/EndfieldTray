@@ -42,7 +42,7 @@ Item {
             text: root.label
             color: root.accent ? Theme.bg : Theme.text
             font.family: Theme.sans
-            font.pixelSize: 10
+            font.pixelSize: 11
             font.weight: Font.DemiBold
             font.letterSpacing: 0.9
             anchors.verticalCenter: parent.verticalCenter

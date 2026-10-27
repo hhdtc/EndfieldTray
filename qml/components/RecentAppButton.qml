@@ -52,7 +52,7 @@ Item {
             text: root.windowCount
             color: Theme.accent
             font.family: Theme.mono
-            font.pixelSize: 6
+            font.pixelSize: 8
         }
     }
 

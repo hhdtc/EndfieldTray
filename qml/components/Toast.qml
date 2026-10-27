@@ -48,7 +48,7 @@ Item {
             text: root.message
             color: Theme.text
             font.family: Theme.cjk
-            font.pixelSize: 11
+            font.pixelSize: 12
             anchors.verticalCenter: parent.verticalCenter
         }
     }

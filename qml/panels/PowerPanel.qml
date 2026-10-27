@@ -39,14 +39,14 @@ BasePanel {
                     text: "OPERATOR  /  LOCAL SESSION"
                     color: Theme.text
                     font.family: Theme.mono
-                    font.pixelSize: 9
+                    font.pixelSize: 10
                     font.letterSpacing: 0.8
                 }
                 Text {
                     text: "ACTIVE SESSION  ·  LOCAL CONSOLE"
                     color: Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.8
                 }
             }
@@ -65,7 +65,7 @@ BasePanel {
                 text: "READY"
                 color: Theme.accent
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.8
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -122,7 +122,7 @@ BasePanel {
                         text: modelData.code + "  /  " + modelData.title
                         color: modelData.action === "shutdown" && powerMouse.containsMouse ? Theme.danger : Theme.text
                         font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.pixelSize: 14
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1
                     }
@@ -131,7 +131,7 @@ BasePanel {
                         text: modelData.sub
                         color: Theme.textFaint
                         font.family: Theme.mono
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                         font.letterSpacing: 0.8
                     }
                 }
@@ -182,7 +182,7 @@ BasePanel {
                     text: root.pendingAction.length > 0 ? "CONFIRM ACTION" : "SESSION CONTROL"
                     color: root.pendingAction.length > 0 ? Theme.accent : Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 8
+                    font.pixelSize: 9
                     font.letterSpacing: 1
                 }
 
@@ -192,7 +192,7 @@ BasePanel {
                         : "选择操作后需要二次确认"
                     color: root.pendingAction.length > 0 ? Theme.text : Theme.textFaint
                     font.family: Theme.cjk
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                 }
             }
 

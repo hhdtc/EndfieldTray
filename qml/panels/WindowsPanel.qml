@@ -28,7 +28,7 @@ BasePanel {
                 text: "SIGNAL  /  ACTIVE WINDOWS"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 1
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -39,7 +39,7 @@ BasePanel {
                 text: WindowModel.count + " 个窗口"
                 color: Theme.accent
                 font.family: Theme.cjk
-                font.pixelSize: 10
+                font.pixelSize: 11
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -112,8 +112,8 @@ BasePanel {
                         width: parent.width
                         text: row.title
                         color: row.active ? Theme.text : (row.minimized ? Theme.textFaint : Theme.textDim)
-                        font.family: Theme.sans
-                        font.pixelSize: 13
+                        font.family: Theme.cjk
+                        font.pixelSize: 14
                         font.weight: Font.Medium
                         font.letterSpacing: 0.2
                         elide: Text.ElideRight
@@ -124,7 +124,7 @@ BasePanel {
                         text: (row.appName || "APPLICATION") + (row.minimized ? "  /  MINIMIZED" : "")
                         color: Theme.textFaint
                         font.family: Theme.mono
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                         elide: Text.ElideRight
                         font.letterSpacing: 0.5
                     }
@@ -137,7 +137,7 @@ BasePanel {
                     text: row.active ? "FOCUS" : ""
                     color: Theme.accent
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.7
                 }
 
@@ -210,7 +210,7 @@ BasePanel {
                 text: "CLICK 切换  /  MIDDLE 最小化"
                 color: Theme.textFaint
                 font.family: Theme.cjk
-                font.pixelSize: 9
+                font.pixelSize: 10
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -220,7 +220,7 @@ BasePanel {
                 text: "WINDOW_MANAGER / KWIN"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.6
                 anchors.verticalCenter: parent.verticalCenter
             }

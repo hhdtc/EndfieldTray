@@ -43,7 +43,7 @@ BasePanel {
                 text: "OUTPUT  /  " + (System.audioSinkDescription.length > 0 ? System.audioSinkDescription : System.audioBackend)
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 0.5
                 elide: Text.ElideRight
                 anchors.verticalCenter: parent.verticalCenter
@@ -63,7 +63,7 @@ BasePanel {
                 text: System.muted ? "MUTED" : "LIVE"
                 color: System.muted ? Theme.warning : Theme.accent
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 0.8
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -73,27 +73,28 @@ BasePanel {
             width: parent.width
             height: 92
 
-            Text {
+            Row {
                 anchors.left: parent.left
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 4
-                text: String(Math.round(root.localVolume)).padStart(2, "0")
-                color: System.muted ? Theme.textFaint : Theme.text
-                font.family: Theme.sans
-                font.pixelSize: 76
-                font.weight: Font.Bold
-                font.letterSpacing: -2
-            }
+                spacing: 7
 
-            Text {
-                anchors.left: parent.left
-                anchors.leftMargin: Math.round(root.localVolume) >= 100 ? 122 : 83
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 20
-                text: "%"
-                color: Theme.accent
-                font.family: Theme.mono
-                font.pixelSize: 16
+                Text {
+                    id: volumeNumber
+                    text: String(Math.round(root.localVolume)).padStart(2, "0")
+                    color: System.muted ? Theme.textFaint : Theme.text
+                    font.family: Theme.cjk
+                    font.pixelSize: 70
+                    font.weight: Font.Bold
+                }
+
+                Text {
+                    text: "%"
+                    color: Theme.accent
+                    font.family: Theme.mono
+                    font.pixelSize: 16
+                    anchors.baseline: volumeNumber.baseline
+                }
             }
 
             // Level meter, purely decorative but tied to the real volume.
@@ -141,7 +142,7 @@ BasePanel {
                 text: "0"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -151,7 +152,7 @@ BasePanel {
                 text: "100"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -168,7 +169,7 @@ BasePanel {
                     text: "OUTPUT DEVICE  /  输出设备"
                     color: Theme.textFaint
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.6
                 }
 
@@ -220,7 +221,7 @@ BasePanel {
                             text: modelData.name
                             color: modelData.active ? Theme.accent : Theme.textDim
                             font.family: Theme.cjk
-                            font.pixelSize: 9
+                            font.pixelSize: 10
                             elide: Text.ElideRight
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -233,7 +234,7 @@ BasePanel {
                             text: "DEFAULT"
                             color: Theme.accent
                             font.family: Theme.mono
-                            font.pixelSize: 6
+                            font.pixelSize: 8
                             font.letterSpacing: 0.5
                         }
 
@@ -276,7 +277,7 @@ BasePanel {
                 text: "WHEEL  /  FINE ADJUST"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.6
                 anchors.verticalCenter: parent.verticalCenter
             }

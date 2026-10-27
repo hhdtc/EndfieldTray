@@ -102,7 +102,7 @@ BasePanel {
                 text: "AVAILABLE ACCESS POINTS"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 8
+                font.pixelSize: 9
                 font.letterSpacing: 1
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -141,7 +141,7 @@ BasePanel {
                 text: System.scanning ? "SCANNING" : "RESCAN"
                 color: System.scanning ? Theme.accent : (refreshMouse.containsMouse ? Theme.accent : Theme.textFaint)
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.7
                 anchors.verticalCenter: parent.verticalCenter
             }
@@ -194,7 +194,7 @@ BasePanel {
                             text: modelData.ssid
                             color: modelData.active ? Theme.accent : Theme.text
                             font.family: Theme.cjk
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             elide: Text.ElideRight
                             width: Math.min(implicitWidth, parent.parent.width - 50)
                         }
@@ -213,7 +213,7 @@ BasePanel {
                         text: modelData.security + "  /  " + modelData.signal + "%"
                         color: Theme.textFaint
                         font.family: Theme.mono
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                         font.letterSpacing: 0.4
                     }
                 }
@@ -225,7 +225,7 @@ BasePanel {
                     text: modelData.active ? "CONNECTED" : ""
                     color: Theme.accent
                     font.family: Theme.mono
-                    font.pixelSize: 7
+                    font.pixelSize: 8
                     font.letterSpacing: 0.6
                 }
 
@@ -274,14 +274,14 @@ BasePanel {
                         text: "AUTH / " + root.selectedSsid
                         color: Theme.accent
                         font.family: Theme.mono
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                         font.letterSpacing: 0.6
                     }
                     Text {
                         text: root.selectedSecurity
                         color: Theme.textFaint
                         font.family: Theme.mono
-                        font.pixelSize: 8
+                        font.pixelSize: 9
                     }
                 }
 
@@ -307,7 +307,7 @@ BasePanel {
                             selectionColor: Theme.accentDim
                             selectedTextColor: Theme.bg
                             font.family: Theme.mono
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                             selectByMouse: true
                             onAccepted: {
                                 if (text.length > 0) {
@@ -325,7 +325,7 @@ BasePanel {
                             text: "Wi-Fi 密码"
                             color: Theme.textFaint
                             font.family: Theme.mono
-                            font.pixelSize: 11
+                            font.pixelSize: 12
                         }
                     }
 
@@ -350,28 +350,28 @@ BasePanel {
             }
         }
 
-        Row {
+        Item {
             width: parent.width
             height: 18
 
             Text {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
                 text: "NETWORKMANAGER / " + (System.wifiConnected ? "ONLINE" : "STANDBY")
                 color: System.wifiConnected ? Theme.accentDim : Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
-                font.letterSpacing: 0.7
-                anchors.verticalCenter: parent.verticalCenter
+                font.pixelSize: 8
+                font.letterSpacing: 0.4
             }
 
-            Item { width: parent.width - 220; height: 1 }
-
             Text {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
                 text: "WPA2 / WPA3 SUPPORTED"
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
-                font.letterSpacing: 0.5
-                anchors.verticalCenter: parent.verticalCenter
+                font.pixelSize: 8
+                font.letterSpacing: 0.3
             }
         }
     }

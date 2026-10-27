@@ -18,7 +18,7 @@ Item {
             text: root.code
             color: root.accentColor
             font.family: Theme.mono
-            font.pixelSize: 8
+            font.pixelSize: 9
             font.letterSpacing: 1.1
             anchors.baseline: titleText.baseline
         }
@@ -47,7 +47,7 @@ Item {
             text: root.detail
             color: Theme.textFaint
             font.family: Theme.mono
-            font.pixelSize: 8
+            font.pixelSize: 9
             font.letterSpacing: 0.5
             anchors.verticalCenter: parent.verticalCenter
         }

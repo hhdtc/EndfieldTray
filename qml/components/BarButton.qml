@@ -49,7 +49,7 @@ Item {
                 text: root.label
                 color: root.active || root.accent ? Theme.accent : Theme.text
                 font.family: Theme.sans
-                font.pixelSize: 10
+                font.pixelSize: 11
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.7
                 visible: text.length > 0
@@ -59,7 +59,7 @@ Item {
                 text: root.sublabel
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 visible: text.length > 0
             }
         }
@@ -69,7 +69,7 @@ Item {
             text: root.trailing
             color: root.accent ? Theme.accent : Theme.textFaint
             font.family: Theme.mono
-            font.pixelSize: 8
+            font.pixelSize: 9
             anchors.verticalCenter: parent.verticalCenter
         }
 

@@ -33,7 +33,7 @@ Item {
             text: root.detail
             color: Theme.textFaint
             font.family: Theme.cjk
-            font.pixelSize: 10
+            font.pixelSize: 11
             anchors.horizontalCenter: parent.horizontalCenter
             visible: text.length > 0
         }

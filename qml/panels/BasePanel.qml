@@ -61,7 +61,7 @@ Item {
                 text: root.code
                 color: Theme.accent
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 anchors.baseline: titleText.baseline
             }
 
@@ -87,7 +87,7 @@ Item {
                 text: root.detail
                 color: Theme.textFaint
                 font.family: Theme.mono
-                font.pixelSize: 7
+                font.pixelSize: 8
                 font.letterSpacing: 0.5
                 anchors.verticalCenter: parent.verticalCenter
                 visible: text.length > 0

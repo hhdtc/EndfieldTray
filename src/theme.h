@@ -53,7 +53,7 @@ public:
     QColor accentDim() const { return QColor(QStringLiteral("#7a7e2e")); }
     QColor text() const { return QColor(QStringLiteral("#f2f0ed")); }
     QColor textDim() const { return QColor(QStringLiteral("#b6b1ae")); }
-    QColor textFaint() const { return QColor(QStringLiteral("#807a7b")); }
+    QColor textFaint() const { return QColor(QStringLiteral("#a49e9b")); }
     QColor warning() const { return QColor(QStringLiteral("#e7aa5a")); }
     QColor danger() const { return QColor(QStringLiteral("#e56f66")); }
     QColor ok() const { return QColor(QStringLiteral("#a9c46a")); }
