@@ -143,6 +143,8 @@ Q_SIGNALS:
 
 private:
     void pollAudio();
+    void startAudioEvents();
+    void stopAudioEvents();
     void pollNetwork();
     void pollBluetooth();
     void pollBattery();
@@ -163,6 +165,9 @@ private:
     bool m_uiInitialized = false;
     QTimer m_volumeApplyTimer;
     QProcess *m_audioProcess = nullptr;
+    QProcess *m_audioEventProcess = nullptr;
+    QByteArray m_audioEventBuffer;
+    QTimer m_audioEventPollTimer;
     QProcess *m_netProcess = nullptr;
     bool m_netPollRunning = false;
     bool m_scanRunning = false;

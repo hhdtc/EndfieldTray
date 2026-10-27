@@ -125,6 +125,9 @@ SystemService::SystemService(QObject *parent)
     m_volumeApplyTimer.setInterval(55);
     connect(&m_volumeApplyTimer, &QTimer::timeout, this, &SystemService::applyVolume);
 
+    m_audioEventPollTimer.setSingleShot(true);
+    m_audioEventPollTimer.setInterval(25);
+    connect(&m_audioEventPollTimer, &QTimer::timeout, this, &SystemService::pollAudio);
 }
 
 QString SystemService::userName() const
@@ -154,16 +157,91 @@ void SystemService::setVolumePanelActive(bool active)
         return;
     }
     m_volumePanelActive = active;
-    // wpctl has no event API, so poll faster only while the volume page is
-    // visible. KDE's own OSD is event-driven and therefore immediate; 150 ms
-    // is perceptually immediate without running a helper process permanently.
-    m_audioTimer.setInterval(active ? 150 : 3000);
     if (active) {
         if (m_uiActive && !m_audioTimer.isActive()) {
             m_audioTimer.start();
         }
+        startAudioEvents();
         pollAudio();
+    } else {
+        stopAudioEvents();
     }
+}
+
+void SystemService::startAudioEvents()
+{
+    if (!m_volumePanelActive || m_audioEventProcess) {
+        return;
+    }
+    const QString pactl = QStandardPaths::findExecutable(QStringLiteral("pactl"));
+    if (pactl.isEmpty()) {
+        // No event source available: keep a modest fallback only while the
+        // volume page is visible.
+        m_audioTimer.setInterval(500);
+        if (m_uiActive)
+            m_audioTimer.start();
+        return;
+    }
+
+    // The subscription is the sole source while the panel is visible.
+    m_audioTimer.stop();
+    m_audioTimer.setInterval(3000);
+    auto *process = new QProcess(this);
+    m_audioEventProcess = process;
+    m_audioEventBuffer.clear();
+    process->setProcessChannelMode(QProcess::SeparateChannels);
+
+    connect(process, &QProcess::readyReadStandardOutput, this, [this, process] {
+        m_audioEventBuffer += process->readAllStandardOutput();
+        int newline;
+        while ((newline = m_audioEventBuffer.indexOf('\n')) >= 0) {
+            const QByteArray line = m_audioEventBuffer.left(newline);
+            m_audioEventBuffer.remove(0, newline + 1);
+            if (line.contains("on sink") || line.contains("on server")) {
+                m_audioEventPollTimer.start();
+            }
+        }
+    });
+    connect(process, &QProcess::errorOccurred, this, [this, process](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart && m_audioEventProcess == process) {
+            m_audioEventProcess = nullptr;
+            process->deleteLater();
+            m_audioTimer.setInterval(500);
+            if (m_uiActive)
+                m_audioTimer.start();
+        }
+    });
+    connect(process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this,
+            [this, process](int, QProcess::ExitStatus) {
+                if (m_audioEventProcess == process) {
+                    m_audioEventProcess = nullptr;
+                }
+                process->deleteLater();
+                if (m_volumePanelActive) {
+                    m_audioTimer.setInterval(500);
+                    if (m_uiActive)
+                        m_audioTimer.start();
+                    QTimer::singleShot(1000, this, &SystemService::startAudioEvents);
+                }
+            });
+    process->start(pactl, {QStringLiteral("subscribe")});
+}
+
+void SystemService::stopAudioEvents()
+{
+    m_audioEventPollTimer.stop();
+    if (!m_audioEventProcess) {
+        m_audioTimer.setInterval(3000);
+        return;
+    }
+    QProcess *process = m_audioEventProcess;
+    m_audioEventProcess = nullptr;
+    process->terminate();
+    process->deleteLater();
+    m_audioEventBuffer.clear();
+    m_audioTimer.setInterval(3000);
+    if (m_uiActive)
+        m_audioTimer.start();
 }
 
 void SystemService::setUiActive(bool active)
@@ -184,6 +262,7 @@ void SystemService::setUiActive(bool active)
         m_netTimer.stop();
         m_bluetoothTimer.stop();
         m_batteryTimer.stop();
+        stopAudioEvents();
     }
 
     // Fill the first frame even while the bar starts collapsed; after this
