@@ -104,6 +104,7 @@ QW.Window {
         } else if (!barHover.hovered) {
             scheduleCollapse()
         }
+        System.setVolumePanelActive(activePanel === "volume")
         if (activePanel.length === 0) {
             panelInputRect = Qt.rect(0, 0, 0, 0)
         } else {
@@ -302,6 +303,8 @@ QW.Window {
 
     onBarExpandedChanged: {
         System.setUiActive(root.barExpanded)
+        if (!root.barExpanded)
+            System.setVolumePanelActive(false)
         TrayModel.setActive(root.barExpanded)
         RecentApps.setActive(root.barExpanded)
         updateInputRegion()

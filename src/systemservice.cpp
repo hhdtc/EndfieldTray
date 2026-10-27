@@ -148,6 +148,24 @@ void SystemService::refreshAll()
     refreshAudioSinks();
 }
 
+void SystemService::setVolumePanelActive(bool active)
+{
+    if (m_volumePanelActive == active) {
+        return;
+    }
+    m_volumePanelActive = active;
+    // wpctl has no event API, so poll faster only while the volume page is
+    // visible. KDE's own OSD is event-driven and therefore immediate; 150 ms
+    // is perceptually immediate without running a helper process permanently.
+    m_audioTimer.setInterval(active ? 150 : 3000);
+    if (active) {
+        if (m_uiActive && !m_audioTimer.isActive()) {
+            m_audioTimer.start();
+        }
+        pollAudio();
+    }
+}
+
 void SystemService::setUiActive(bool active)
 {
     m_uiActive = active;
@@ -204,6 +222,11 @@ void SystemService::run(const QString &program,
 void SystemService::pollAudio()
 {
     if (m_audioProcess) {
+        return;
+    }
+    // A slider drag owns the value until its debounced apply finishes. Do not
+    // let a poll race it and snap the number back to the previous volume.
+    if (m_pendingVolume >= 0) {
         return;
     }
 

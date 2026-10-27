@@ -98,6 +98,7 @@ public:
 
     Q_INVOKABLE void refreshAll();
     Q_INVOKABLE void setUiActive(bool active);
+    Q_INVOKABLE void setVolumePanelActive(bool active);
     Q_INVOKABLE void refreshNetworks();
     Q_INVOKABLE void refreshBluetooth();
     Q_INVOKABLE void setBluetoothEnabled(bool enabled);
@@ -154,6 +155,7 @@ private:
     void parseRadio(const QString &output);
 
     QTimer m_audioTimer;
+    bool m_volumePanelActive = false;
     QTimer m_netTimer;
     QTimer m_bluetoothTimer;
     QTimer m_batteryTimer;
