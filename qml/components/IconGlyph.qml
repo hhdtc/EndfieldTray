@@ -204,6 +204,18 @@ Canvas {
             ctx.closePath()
             ctx.fillStyle = root.color
             ctx.fill()
+            // Small star makes the action unmistakably "sleep".
+            ctx.beginPath()
+            ctx.moveTo(18.4, 3.7)
+            ctx.lineTo(19.3, 5.8)
+            ctx.lineTo(21.4, 6.7)
+            ctx.lineTo(19.3, 7.6)
+            ctx.lineTo(18.4, 9.7)
+            ctx.lineTo(17.5, 7.6)
+            ctx.lineTo(15.4, 6.7)
+            ctx.lineTo(17.5, 5.8)
+            ctx.closePath()
+            ctx.fill()
             break
 
         case "reboot":
