@@ -68,10 +68,6 @@
 | <img src="docs/tray.png" width="420" alt="系统托盘"> | <img src="docs/tray-menu.png" width="420" alt="托盘菜单"> |
 | 自带 StatusNotifierItem host，不依赖 Plasma 系统托盘。 | 支持 DBusMenu 子菜单、左键激活和中键行为。 |
 
-![面板打开动画](docs/panel-open.gif)
-
-*面板打开：条展开，详情页从底部淡入。*
-
 ### 圆环徽章
 
 Wi-Fi、音量、电池使用参考 HUD 的圆环进度；窗口、蓝牙和电源是按钮型圆环，外圈只表示按钮边界，不伪装成进度。圆环只在数值、状态或 hover 改变时重绘。
