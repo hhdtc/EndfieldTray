@@ -163,6 +163,29 @@ Canvas {
             break
         }
 
+        case "brightness":
+            ctx.beginPath()
+            ctx.arc(12, 12, 3.7, 0, Math.PI * 2)
+            ctx.stroke()
+            for (let i = 0; i < 8; ++i) {
+                const angle = i * Math.PI / 4
+                ctx.beginPath()
+                ctx.moveTo(12 + Math.cos(angle) * 6.4, 12 + Math.sin(angle) * 6.4)
+                ctx.lineTo(12 + Math.cos(angle) * 8.8, 12 + Math.sin(angle) * 8.8)
+                ctx.stroke()
+            }
+            break
+
+        case "keyboard":
+            ctx.strokeRect(2.5, 7.5, 19, 9)
+            ctx.beginPath()
+            ctx.moveTo(5.5, 10.5)
+            ctx.lineTo(18.5, 10.5)
+            ctx.moveTo(5.5, 13.2)
+            ctx.lineTo(15.5, 13.2)
+            ctx.stroke()
+            break
+
         case "power":
             ctx.beginPath()
             ctx.arc(12, 12.4, 7.2, Math.PI * -0.34, Math.PI * 1.34)

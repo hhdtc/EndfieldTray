@@ -132,6 +132,7 @@ SystemService::SystemService(QObject *parent)
         pollAudio();
     });
     QTimer::singleShot(0, this, &SystemService::startAudioEvents);
+    initBrightness();
 }
 
 QString SystemService::userName() const
@@ -153,6 +154,99 @@ void SystemService::refreshAll()
     refreshNetworks();
     refreshPowerProfile();
     refreshAudioSinks();
+}
+
+void SystemService::initBrightness()
+{
+    auto *bus = QDBusConnection::sessionBus().interface();
+    if (!bus || !bus->isServiceRegistered(QStringLiteral("org.kde.Solid.PowerManagement")))
+        return;
+
+    const QString service = QStringLiteral("org.kde.Solid.PowerManagement");
+    const QString screenPath = QStringLiteral("/org/kde/Solid/PowerManagement/Actions/BrightnessControl");
+    const QString screenIface = QStringLiteral("org.kde.Solid.PowerManagement.Actions.BrightnessControl");
+    const QString keyboardPath = QStringLiteral("/org/kde/Solid/PowerManagement/Actions/KeyboardBrightnessControl");
+    const QString keyboardIface = QStringLiteral("org.kde.Solid.PowerManagement.Actions.KeyboardBrightnessControl");
+
+    auto read = [&](const QString &path, const QString &iface, const QString &method) -> QVariant {
+        const QDBusMessage reply = QDBusConnection::sessionBus().call(
+            QDBusMessage::createMethodCall(service, path, iface, method), QDBus::Block, 500);
+        return reply.type() == QDBusMessage::ReplyMessage && !reply.arguments().isEmpty()
+            ? reply.arguments().constFirst() : QVariant();
+    };
+
+    bool ok = false;
+    m_screenBrightnessMin = read(screenPath, screenIface, QStringLiteral("brightnessMin")).toInt(&ok);
+    if (!ok) m_screenBrightnessMin = 0;
+    m_screenBrightnessMax = read(screenPath, screenIface, QStringLiteral("brightnessMax")).toInt(&ok);
+    if (!ok) m_screenBrightnessMax = 0;
+    const int screen = read(screenPath, screenIface, QStringLiteral("brightness")).toInt(&ok);
+    if (ok && m_screenBrightnessMax > m_screenBrightnessMin)
+        updateScreenBrightness(screen);
+
+    m_keyboardBrightnessMin = read(keyboardPath, keyboardIface, QStringLiteral("keyboardBrightnessMin")).toInt(&ok);
+    if (!ok) m_keyboardBrightnessMin = 0;
+    m_keyboardBrightnessMax = read(keyboardPath, keyboardIface, QStringLiteral("keyboardBrightnessMax")).toInt(&ok);
+    if (!ok) m_keyboardBrightnessMax = 0;
+    const int keyboard = read(keyboardPath, keyboardIface, QStringLiteral("keyboardBrightness")).toInt(&ok);
+    if (ok && m_keyboardBrightnessMax > m_keyboardBrightnessMin)
+        updateKeyboardBrightness(keyboard);
+    m_brightnessPrimed = true;
+
+    QDBusConnection::sessionBus().connect(service, screenPath, screenIface,
+        QStringLiteral("brightnessChanged"), this, SLOT(onScreenBrightnessChanged(int)));
+    QDBusConnection::sessionBus().connect(service, screenPath, screenIface,
+        QStringLiteral("brightnessMaxChanged"), this, SLOT(onScreenBrightnessMaxChanged(int)));
+    QDBusConnection::sessionBus().connect(service, keyboardPath, keyboardIface,
+        QStringLiteral("keyboardBrightnessChanged"), this, SLOT(onKeyboardBrightnessChanged(int)));
+    QDBusConnection::sessionBus().connect(service, keyboardPath, keyboardIface,
+        QStringLiteral("keyboardBrightnessMaxChanged"), this, SLOT(onKeyboardBrightnessMaxChanged(int)));
+}
+
+void SystemService::updateScreenBrightness(int value)
+{
+    if (m_screenBrightnessMax <= m_screenBrightnessMin)
+        return;
+    const int percent = qBound(0, qRound((value - m_screenBrightnessMin) * 100.0
+                                             / (m_screenBrightnessMax - m_screenBrightnessMin)), 100);
+    if (percent == m_screenBrightness)
+        return;
+    m_screenBrightness = percent;
+    if (m_brightnessPrimed)
+        Q_EMIT brightnessActivity(percent, false);
+}
+
+void SystemService::updateKeyboardBrightness(int value)
+{
+    if (m_keyboardBrightnessMax <= m_keyboardBrightnessMin)
+        return;
+    const int percent = qBound(0, qRound((value - m_keyboardBrightnessMin) * 100.0
+                                             / (m_keyboardBrightnessMax - m_keyboardBrightnessMin)), 100);
+    if (percent == m_keyboardBrightness)
+        return;
+    m_keyboardBrightness = percent;
+    if (m_brightnessPrimed)
+        Q_EMIT brightnessActivity(percent, true);
+}
+
+void SystemService::onScreenBrightnessChanged(int value)
+{
+    updateScreenBrightness(value);
+}
+
+void SystemService::onScreenBrightnessMaxChanged(int value)
+{
+    m_screenBrightnessMax = value;
+}
+
+void SystemService::onKeyboardBrightnessChanged(int value)
+{
+    updateKeyboardBrightness(value);
+}
+
+void SystemService::onKeyboardBrightnessMaxChanged(int value)
+{
+    m_keyboardBrightnessMax = value;
 }
 
 void SystemService::setVolumePanelActive(bool active)

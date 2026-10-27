@@ -55,21 +55,22 @@ QW.Window {
     property bool toastShown: false
     property string clockText: "--:--"
     property string dateText: "--- / -- ---"
-    property bool volumeOsdVisible: false
-    property int volumeOsdValue: 0
-    property real volumeOsdOpacity: 0
+    property bool capsuleOsdVisible: false
+    property int capsuleOsdValue: 0
+    property real capsuleOsdOpacity: 0
     property real clockOpacity: 1
+    property string capsuleOsdKind: "volume"
 
     readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
     readonly property bool hudHidden: WindowModel.fullScreenActive
 
     onHudHiddenChanged: {
         if (hudHidden) {
-            volumeOsdFadeInTimer.stop()
-            volumeOsdHoldTimer.stop()
-            volumeOsdHideTimer.stop()
-            volumeOsdVisible = false
-            volumeOsdOpacity = 0
+            capsuleOsdFadeInTimer.stop()
+            capsuleOsdHoldTimer.stop()
+            capsuleOsdHideTimer.stop()
+            capsuleOsdVisible = false
+            capsuleOsdOpacity = 0
             clockOpacity = 1
             hideGroup()
             closePanels()
@@ -282,37 +283,38 @@ QW.Window {
         toastTimer.restart()
     }
 
-    function showVolumeOsd(value) {
+    function showCapsuleOsd(value, kind) {
         if (hudHidden || barExpanded)
             return
-        volumeOsdValue = Math.round(value)
+        capsuleOsdValue = Math.round(value)
+        capsuleOsdKind = kind
 
         // Already fully shown: just refresh the value and hold time.
-        if (volumeOsdVisible && volumeOsdOpacity > 0.99) {
-            volumeOsdOpacity = 1
-            volumeOsdHoldTimer.restart()
+        if (capsuleOsdVisible && capsuleOsdOpacity > 0.99) {
+            capsuleOsdOpacity = 1
+            capsuleOsdHoldTimer.restart()
             return
         }
 
         // A new event during the fade-out/hide must restart the sequence.
-        volumeOsdHideTimer.stop()
-        volumeOsdHoldTimer.stop()
+        capsuleOsdHideTimer.stop()
+        capsuleOsdHoldTimer.stop()
 
         // Sequential transition: clock fully out first, then volume in.
-        if (volumeOsdFadeInTimer.running)
+        if (capsuleOsdFadeInTimer.running)
             return
-        volumeOsdVisible = false
-        volumeOsdOpacity = 0
+        capsuleOsdVisible = false
+        capsuleOsdOpacity = 0
         clockOpacity = 0
-        volumeOsdFadeInTimer.restart()
+        capsuleOsdFadeInTimer.restart()
     }
 
-    function hideVolumeOsd() {
-        if (!volumeOsdVisible)
+    function hideCapsuleOsd() {
+        if (!capsuleOsdVisible)
             return
-        volumeOsdHoldTimer.stop()
-        volumeOsdOpacity = 0
-        volumeOsdHideTimer.restart()
+        capsuleOsdHoldTimer.stop()
+        capsuleOsdOpacity = 0
+        capsuleOsdHideTimer.restart()
     }
 
     function openTrayMenu(service, anchorX) {
@@ -347,11 +349,11 @@ QW.Window {
     onBarExpandedChanged: {
         System.setUiActive(root.barExpanded)
         if (root.barExpanded) {
-            volumeOsdFadeInTimer.stop()
-            volumeOsdHoldTimer.stop()
-            volumeOsdHideTimer.stop()
-            volumeOsdVisible = false
-            volumeOsdOpacity = 0
+            capsuleOsdFadeInTimer.stop()
+            capsuleOsdHoldTimer.stop()
+            capsuleOsdHideTimer.stop()
+            capsuleOsdVisible = false
+            capsuleOsdOpacity = 0
             clockOpacity = 1
         } else {
             System.setVolumePanelActive(false)
@@ -493,32 +495,36 @@ QW.Window {
         function onAudioResult(ok, message) { root.showToast(message, ok) }
         function onVolumeActivity(volume) {
             if (!root.barExpanded && !root.hudHidden)
-                root.showVolumeOsd(volume)
+                root.showCapsuleOsd(volume, "volume")
+        }
+        function onBrightnessActivity(percent, keyboard) {
+            if (!root.barExpanded && !root.hudHidden)
+                root.showCapsuleOsd(percent, keyboard ? "keyboard" : "screen")
         }
     }
 
 
     Timer {
-        id: volumeOsdFadeInTimer
+        id: capsuleOsdFadeInTimer
         interval: 150
         onTriggered: {
-            root.volumeOsdVisible = true
-            root.volumeOsdOpacity = 1
-            root.volumeOsdHoldTimer.restart()
+            root.capsuleOsdVisible = true
+            root.capsuleOsdOpacity = 1
+            root.capsuleOsdHoldTimer.restart()
         }
     }
 
     Timer {
-        id: volumeOsdHoldTimer
+        id: capsuleOsdHoldTimer
         interval: 2000
-        onTriggered: root.hideVolumeOsd()
+        onTriggered: root.hideCapsuleOsd()
     }
 
     Timer {
-        id: volumeOsdHideTimer
+        id: capsuleOsdHideTimer
         interval: 170
         onTriggered: {
-            root.volumeOsdVisible = false
+            root.capsuleOsdVisible = false
             root.clockOpacity = 1
         }
     }
@@ -616,18 +622,18 @@ QW.Window {
             }
         }
 
-        // Volume OSD shown over the collapsed capsule.
+        // Volume/brightness OSD shown over the collapsed capsule.
         Item {
-            id: volumeOsd
+            id: capsuleOsd
             anchors.fill: parent
-            visible: root.volumeOsdVisible
-            opacity: root.volumeOsdOpacity
+            visible: root.capsuleOsdVisible
+            opacity: root.capsuleOsdOpacity
             Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
             Canvas {
-                id: volumeRing
+                id: capsuleRing
                 anchors.fill: parent
-                property real progress: Math.max(0, Math.min(1, root.volumeOsdValue / 100.0))
+                property real progress: Math.max(0, Math.min(1, root.capsuleOsdValue / 100.0))
                 onProgressChanged: requestPaint()
                 onWidthChanged: requestPaint()
                 onHeightChanged: requestPaint()
@@ -690,17 +696,30 @@ QW.Window {
                     }
 
                     drawPath(1, Theme.line)
-                    drawPath(volumeRing.progress, Theme.accent)
+                    drawPath(capsuleRing.progress, Theme.accent)
                 }
             }
 
-            Text {
+            Row {
                 anchors.centerIn: parent
-                text: Math.round(root.volumeOsdValue) + "%"
-                color: Theme.accent
-                font.family: Theme.cjk
-                font.pixelSize: 18
-                font.weight: Font.Bold
+                spacing: 4
+
+                IconGlyph {
+                    visible: root.capsuleOsdKind !== "volume"
+                    name: root.capsuleOsdKind === "keyboard" ? "keyboard" : "brightness"
+                    width: 14
+                    height: 14
+                    color: Theme.accent
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: Math.round(root.capsuleOsdValue) + "%"
+                    color: Theme.accent
+                    font.family: Theme.cjk
+                    font.pixelSize: 18
+                    font.weight: Font.Bold
+                }
             }
         }
 

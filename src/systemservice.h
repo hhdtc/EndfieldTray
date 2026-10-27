@@ -123,6 +123,7 @@ public:
 Q_SIGNALS:
     void volumeChanged();
     void volumeActivity(int volume);
+    void brightnessActivity(int percent, bool keyboard);
     void mutedChanged();
     void audioBackendChanged();
     void wifiChanged();
@@ -142,9 +143,18 @@ Q_SIGNALS:
     void powerProfileResult(bool ok, const QString &message);
     void audioResult(bool ok, const QString &message);
 
+private Q_SLOTS:
+    void onScreenBrightnessChanged(int value);
+    void onScreenBrightnessMaxChanged(int value);
+    void onKeyboardBrightnessChanged(int value);
+    void onKeyboardBrightnessMaxChanged(int value);
+
 private:
     void pollAudio();
     void startAudioEvents();
+    void initBrightness();
+    void updateScreenBrightness(int value);
+    void updateKeyboardBrightness(int value);
     void pollNetwork();
     void pollBluetooth();
     void pollBattery();
@@ -168,6 +178,13 @@ private:
     QByteArray m_audioEventBuffer;
     QTimer m_audioEventPollTimer;
     bool m_audioEventPending = false;
+    int m_screenBrightness = -1;
+    int m_screenBrightnessMin = 0;
+    int m_screenBrightnessMax = 0;
+    int m_keyboardBrightness = -1;
+    int m_keyboardBrightnessMin = 0;
+    int m_keyboardBrightnessMax = 0;
+    bool m_brightnessPrimed = false;
     QProcess *m_netProcess = nullptr;
     bool m_netPollRunning = false;
     bool m_scanRunning = false;
