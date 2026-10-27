@@ -234,7 +234,7 @@ QW.Window {
             panelInputRect = Qt.rect(0, 0, 0, 0)
             return
         }
-        const scale = 0.9
+        const scale = 1.0
         const w = size[0] * scale
         const h = size[1] * scale
         const baseX = name === "trayMenu" ? trayMenuPanel.x : panelX

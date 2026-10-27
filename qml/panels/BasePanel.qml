@@ -16,11 +16,8 @@ Item {
 
     width: panelWidth
     height: panelHeight
-    // Detailed panels are intentionally smaller than the underlying layout;
-    // scaling around the bottom keeps the anchor above the corresponding
-    // bar button while shrinking both the panel and its hit area.
-    scale: 0.9
-    transformOrigin: Item.Bottom
+    // Render panels at native scale. Scaling an Item resamples the glyph
+    // rasters and makes small text look soft under fractional DPI scaling.
     opacity: 0
 
     Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
