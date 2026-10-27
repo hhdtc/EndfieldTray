@@ -58,16 +58,19 @@ QW.Window {
     property bool volumeOsdVisible: false
     property int volumeOsdValue: 0
     property real volumeOsdOpacity: 0
+    property real clockOpacity: 1
 
     readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
     readonly property bool hudHidden: WindowModel.fullScreenActive
 
     onHudHiddenChanged: {
         if (hudHidden) {
-            volumeOsdTimer.stop()
+            volumeOsdFadeInTimer.stop()
+            volumeOsdHoldTimer.stop()
             volumeOsdHideTimer.stop()
             volumeOsdVisible = false
             volumeOsdOpacity = 0
+            clockOpacity = 1
             hideGroup()
             closePanels()
             barExpanded = false
@@ -283,13 +286,31 @@ QW.Window {
         if (hudHidden || barExpanded)
             return
         volumeOsdValue = Math.round(value)
-        volumeOsdVisible = true
-        volumeOsdOpacity = 1
-        volumeOsdTimer.restart()
+
+        // Already fully shown: just refresh the value and hold time.
+        if (volumeOsdVisible && volumeOsdOpacity > 0.99) {
+            volumeOsdOpacity = 1
+            volumeOsdHoldTimer.restart()
+            return
+        }
+
+        // A new event during the fade-out/hide must restart the sequence.
         volumeOsdHideTimer.stop()
+        volumeOsdHoldTimer.stop()
+
+        // Sequential transition: clock fully out first, then volume in.
+        if (volumeOsdFadeInTimer.running)
+            return
+        volumeOsdVisible = false
+        volumeOsdOpacity = 0
+        clockOpacity = 0
+        volumeOsdFadeInTimer.restart()
     }
 
     function hideVolumeOsd() {
+        if (!volumeOsdVisible)
+            return
+        volumeOsdHoldTimer.stop()
         volumeOsdOpacity = 0
         volumeOsdHideTimer.restart()
     }
@@ -326,10 +347,12 @@ QW.Window {
     onBarExpandedChanged: {
         System.setUiActive(root.barExpanded)
         if (root.barExpanded) {
-            volumeOsdTimer.stop()
+            volumeOsdFadeInTimer.stop()
+            volumeOsdHoldTimer.stop()
             volumeOsdHideTimer.stop()
             volumeOsdVisible = false
             volumeOsdOpacity = 0
+            clockOpacity = 1
         } else {
             System.setVolumePanelActive(false)
         }
@@ -476,15 +499,28 @@ QW.Window {
 
 
     Timer {
-        id: volumeOsdTimer
+        id: volumeOsdFadeInTimer
+        interval: 150
+        onTriggered: {
+            root.volumeOsdVisible = true
+            root.volumeOsdOpacity = 1
+            root.volumeOsdHoldTimer.restart()
+        }
+    }
+
+    Timer {
+        id: volumeOsdHoldTimer
         interval: 2000
         onTriggered: root.hideVolumeOsd()
     }
 
     Timer {
         id: volumeOsdHideTimer
-        interval: 180
-        onTriggered: root.volumeOsdVisible = false
+        interval: 170
+        onTriggered: {
+            root.volumeOsdVisible = false
+            root.clockOpacity = 1
+        }
     }
 
     HoverHandler {
@@ -556,7 +592,8 @@ QW.Window {
             id: clockColumn
             anchors.centerIn: parent
             spacing: -4
-            opacity: 1 - root.volumeOsdOpacity
+            opacity: root.clockOpacity
+            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
