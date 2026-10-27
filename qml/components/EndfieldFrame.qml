@@ -58,14 +58,4 @@ Item {
         color: Qt.rgba(Theme.textDim.r, Theme.textDim.g, Theme.textDim.b, 0.45)
     }
 
-    Rectangle {
-        visible: root.decorations
-        x: root.width - 20
-        y: 7
-        width: 4
-        height: 4
-        rotation: 45
-        color: root.accentColor
-        opacity: 0.7
-    }
 }

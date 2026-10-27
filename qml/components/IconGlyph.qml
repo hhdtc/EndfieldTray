@@ -197,12 +197,13 @@ Canvas {
             break
 
         case "sleep":
+            // Filled crescent: outer left half plus reversed inner half.
             ctx.beginPath()
-            ctx.arc(13.6, 12, 7.3, Math.PI * 0.38, Math.PI * 1.62)
-            ctx.stroke()
-            ctx.beginPath()
-            ctx.arc(10.2, 10.2, 5.7, Math.PI * 1.35, Math.PI * 0.72, true)
-            ctx.stroke()
+            ctx.arc(12, 12, 7.2, Math.PI * 0.5, Math.PI * 1.5, false)
+            ctx.arc(12, 12, 3.4, Math.PI * 1.5, Math.PI * 0.5, true)
+            ctx.closePath()
+            ctx.fillStyle = root.color
+            ctx.fill()
             break
 
         case "reboot":
@@ -224,15 +225,15 @@ Canvas {
             ctx.moveTo(12, 2.8)
             ctx.lineTo(12, 11.2)
             ctx.stroke()
-            ctx.strokeStyle = root.accentColor
-            ctx.beginPath()
-            ctx.moveTo(5, 4)
-            ctx.lineTo(19, 4)
-            ctx.stroke()
             break
 
         case "logout":
-            ctx.strokeRect(4, 3.5, 8.5, 17)
+            ctx.beginPath()
+            ctx.moveTo(11.5, 3.5)
+            ctx.lineTo(4, 3.5)
+            ctx.lineTo(4, 20.5)
+            ctx.lineTo(11.5, 20.5)
+            ctx.stroke()
             ctx.strokeStyle = root.accentColor
             ctx.beginPath()
             ctx.moveTo(10, 12)

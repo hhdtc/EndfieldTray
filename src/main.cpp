@@ -12,6 +12,7 @@
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QImage>
 #include <QLockFile>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Endfield Tray"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Endfield Tray"));
-    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.14"));
+    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.15"));
     QGuiApplication::setOrganizationName(QStringLiteral("EndfieldTray"));
     QGuiApplication::setDesktopFileName(QStringLiteral("endfield-tray"));
 
@@ -54,11 +55,19 @@ int main(int argc, char **argv)
     QCommandLineOption screenshotOption(QStringLiteral("screenshot"),
                                         QStringLiteral("Grab the QML window to this file and exit (development aid)."),
                                         QStringLiteral("path"));
+    QCommandLineOption recordOption(QStringLiteral("record"),
+                                    QStringLiteral("Capture QML frames into this directory and exit (development aid)."),
+                                    QStringLiteral("directory"));
+    QCommandLineOption recordFramesOption(QStringLiteral("record-frames"),
+                                          QStringLiteral("Number of frames to capture with --record."),
+                                          QStringLiteral("count"), QStringLiteral("60"));
     parser.addOption(windowedOption);
     parser.addOption(noLockOption);
     parser.addOption(autostartOption);
     parser.addOption(previewOption);
     parser.addOption(screenshotOption);
+    parser.addOption(recordOption);
+    parser.addOption(recordFramesOption);
     parser.process(app);
 
     std::unique_ptr<QLockFile> lock;
@@ -137,6 +146,31 @@ int main(int argc, char **argv)
         }
         window->show();
         inputRegion.setWindow(window);
+    }
+
+    if (parser.isSet(recordOption)) {
+        const QString dir = parser.value(recordOption);
+        QDir().mkpath(dir);
+        auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().constFirst());
+        if (!window) {
+            return 1;
+        }
+        const int count = qMax(1, parser.value(recordFramesOption).toInt());
+        auto *timer = new QTimer(&app);
+        timer->setInterval(50);
+        auto frame = std::make_shared<int>(0);
+        QObject::connect(timer, &QTimer::timeout, &app, [&, dir, count, timer, frame, window] {
+            const QString path = QStringLiteral("%1/frame-%2.png")
+                                     .arg(dir)
+                                     .arg(*frame, 4, 10, QLatin1Char('0'));
+            window->grabWindow().save(path);
+            ++(*frame);
+            if (*frame >= count) {
+                timer->stop();
+                QCoreApplication::quit();
+            }
+        });
+        timer->start();
     }
 
     if (parser.isSet(screenshotOption)) {

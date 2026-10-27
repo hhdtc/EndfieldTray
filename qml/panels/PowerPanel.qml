@@ -110,6 +110,7 @@ BasePanel {
                     name: modelData.icon
                     width: 18
                     height: 18
+                    lineWidth: 1.9
                     color: modelData.action === "shutdown" && powerMouse.containsMouse ? Theme.danger : Theme.textDim
                 }
 
