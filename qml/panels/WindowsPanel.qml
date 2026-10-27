@@ -66,11 +66,18 @@ BasePanel {
                 width: list.width
                 height: 46
 
+                // Passive hover for the whole row. Unlike rowMouse (which
+                // leaves the close-button area free), this stays hovered while
+                // the pointer is over the close button.
+                HoverHandler {
+                    id: rowHover
+                }
+
                 Rectangle {
                     anchors.fill: parent
                     color: row.active
                         ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.08)
-                        : (rowMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.045) : "transparent")
+                        : ((rowHover.hovered || rowMouse.containsMouse) ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.045) : "transparent")
                     border.width: row.active ? 1 : 0
                     border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.28)
                 }
@@ -141,7 +148,8 @@ BasePanel {
                     anchors.right: parent.right
                     anchors.rightMargin: 10
                     anchors.verticalCenter: parent.verticalCenter
-                    visible: row.closable && rowMouse.containsMouse
+                    visible: row.closable
+                        && (rowHover.hovered || rowMouse.containsMouse || closeMouse.containsMouse)
 
                     Rectangle {
                         anchors.fill: parent
