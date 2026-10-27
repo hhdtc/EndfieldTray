@@ -122,6 +122,7 @@ public:
 
 Q_SIGNALS:
     void volumeChanged();
+    void volumeActivity(int volume);
     void mutedChanged();
     void audioBackendChanged();
     void wifiChanged();
@@ -144,7 +145,6 @@ Q_SIGNALS:
 private:
     void pollAudio();
     void startAudioEvents();
-    void stopAudioEvents();
     void pollNetwork();
     void pollBluetooth();
     void pollBattery();
@@ -157,7 +157,6 @@ private:
     void parseRadio(const QString &output);
 
     QTimer m_audioTimer;
-    bool m_volumePanelActive = false;
     QTimer m_netTimer;
     QTimer m_bluetoothTimer;
     QTimer m_batteryTimer;
@@ -168,6 +167,7 @@ private:
     QProcess *m_audioEventProcess = nullptr;
     QByteArray m_audioEventBuffer;
     QTimer m_audioEventPollTimer;
+    bool m_audioEventPending = false;
     QProcess *m_netProcess = nullptr;
     bool m_netPollRunning = false;
     bool m_scanRunning = false;

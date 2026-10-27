@@ -55,12 +55,19 @@ QW.Window {
     property bool toastShown: false
     property string clockText: "--:--"
     property string dateText: "--- / -- ---"
+    property bool volumeOsdVisible: false
+    property int volumeOsdValue: 0
+    property real volumeOsdOpacity: 0
 
     readonly property int barWidth: barExpanded ? expandedWidth : collapsedWidth
     readonly property bool hudHidden: WindowModel.fullScreenActive
 
     onHudHiddenChanged: {
         if (hudHidden) {
+            volumeOsdTimer.stop()
+            volumeOsdHideTimer.stop()
+            volumeOsdVisible = false
+            volumeOsdOpacity = 0
             hideGroup()
             closePanels()
             barExpanded = false
@@ -272,6 +279,21 @@ QW.Window {
         toastTimer.restart()
     }
 
+    function showVolumeOsd(value) {
+        if (hudHidden || barExpanded)
+            return
+        volumeOsdValue = Math.round(value)
+        volumeOsdVisible = true
+        volumeOsdOpacity = 1
+        volumeOsdTimer.restart()
+        volumeOsdHideTimer.stop()
+    }
+
+    function hideVolumeOsd() {
+        volumeOsdOpacity = 0
+        volumeOsdHideTimer.restart()
+    }
+
     function openTrayMenu(service, anchorX) {
         if (!service)
             return
@@ -303,8 +325,14 @@ QW.Window {
 
     onBarExpandedChanged: {
         System.setUiActive(root.barExpanded)
-        if (!root.barExpanded)
+        if (root.barExpanded) {
+            volumeOsdTimer.stop()
+            volumeOsdHideTimer.stop()
+            volumeOsdVisible = false
+            volumeOsdOpacity = 0
+        } else {
             System.setVolumePanelActive(false)
+        }
         TrayModel.setActive(root.barExpanded)
         RecentApps.setActive(root.barExpanded)
         updateInputRegion()
@@ -440,8 +468,24 @@ QW.Window {
         function onPowerResult(ok, message) { root.showToast(message, ok) }
         function onPowerProfileResult(ok, message) { root.showToast(message, ok) }
         function onAudioResult(ok, message) { root.showToast(message, ok) }
+        function onVolumeActivity(volume) {
+            if (!root.barExpanded && !root.hudHidden)
+                root.showVolumeOsd(volume)
+        }
     }
 
+
+    Timer {
+        id: volumeOsdTimer
+        interval: 2000
+        onTriggered: root.hideVolumeOsd()
+    }
+
+    Timer {
+        id: volumeOsdHideTimer
+        interval: 180
+        onTriggered: root.volumeOsdVisible = false
+    }
 
     HoverHandler {
         id: hudHover
@@ -507,10 +551,12 @@ QW.Window {
             shadow: false
         }
 
-        // Collapsed state: time only.
+        // Collapsed state: time only. The volume OSD cross-fades over it.
         Column {
+            id: clockColumn
             anchors.centerIn: parent
             spacing: -4
+            opacity: 1 - root.volumeOsdOpacity
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -530,6 +576,94 @@ QW.Window {
                 font.family: Theme.mono
                 font.pixelSize: 6
                 font.letterSpacing: 0.8
+            }
+        }
+
+        // Volume OSD shown over the collapsed capsule.
+        Item {
+            id: volumeOsd
+            anchors.fill: parent
+            visible: root.volumeOsdVisible
+            opacity: root.volumeOsdOpacity
+            Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+            Canvas {
+                id: volumeRing
+                anchors.fill: parent
+                property real progress: Math.max(0, Math.min(1, root.volumeOsdValue / 100.0))
+                onProgressChanged: requestPaint()
+                onWidthChanged: requestPaint()
+                onHeightChanged: requestPaint()
+                Component.onCompleted: requestPaint()
+                onPaint: {
+                    const ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.clearRect(0, 0, width, height)
+                    if (width <= 0 || height <= 0)
+                        return
+                    const inset = 4
+                    const lw = 2
+                    const x = inset
+                    const y = inset
+                    const w = width - inset * 2
+                    const h = height - inset * 2
+                    const r = h / 2
+                    const straight = Math.max(0, w - 2 * r)
+                    const vertical = Math.max(0, h - 2 * r)
+                    const arc = Math.PI * r / 2
+                    const total = 2 * straight + 2 * vertical + 4 * arc
+
+                    function drawPath(fraction, color) {
+                        if (fraction <= 0)
+                            return
+                        let remain = fraction * total
+                        function line(x1, y1, x2, y2) {
+                            if (remain <= 0)
+                                return
+                            const len = Math.hypot(x2 - x1, y2 - y1)
+                            if (len <= 0)
+                                return
+                            const take = Math.min(remain, len)
+                            const t = take / len
+                            ctx.lineTo(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)
+                            remain -= take
+                        }
+                        function arcPart(cx, cy, start) {
+                            if (remain <= 0)
+                                return
+                            const take = Math.min(remain, arc)
+                            ctx.arc(cx, cy, r, start, start + take / r, false)
+                            remain -= take
+                        }
+
+                        ctx.beginPath()
+                        ctx.moveTo(x + r, y)
+                        line(x + r, y, x + w - r, y)
+                        arcPart(x + w - r, y + r, -Math.PI / 2)
+                        line(x + w, y + r, x + w, y + h - r)
+                        arcPart(x + w - r, y + h - r, 0)
+                        line(x + w - r, y + h, x + r, y + h)
+                        arcPart(x + r, y + h - r, Math.PI / 2)
+                        line(x, y + h - r, x, y + r)
+                        arcPart(x + r, y + r, Math.PI)
+                        ctx.strokeStyle = color
+                        ctx.lineWidth = lw
+                        ctx.lineCap = "round"
+                        ctx.stroke()
+                    }
+
+                    drawPath(1, Theme.line)
+                    drawPath(volumeRing.progress, Theme.accent)
+                }
+            }
+
+            Text {
+                anchors.centerIn: parent
+                text: Math.round(root.volumeOsdValue) + "%"
+                color: Theme.accent
+                font.family: Theme.cjk
+                font.pixelSize: 18
+                font.weight: Font.Bold
             }
         }
 

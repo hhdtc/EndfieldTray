@@ -127,7 +127,11 @@ SystemService::SystemService(QObject *parent)
 
     m_audioEventPollTimer.setSingleShot(true);
     m_audioEventPollTimer.setInterval(25);
-    connect(&m_audioEventPollTimer, &QTimer::timeout, this, &SystemService::pollAudio);
+    connect(&m_audioEventPollTimer, &QTimer::timeout, this, [this] {
+        m_audioEventPending = true;
+        pollAudio();
+    });
+    QTimer::singleShot(0, this, &SystemService::startAudioEvents);
 }
 
 QString SystemService::userName() const
@@ -153,39 +157,29 @@ void SystemService::refreshAll()
 
 void SystemService::setVolumePanelActive(bool active)
 {
-    if (m_volumePanelActive == active) {
-        return;
-    }
-    m_volumePanelActive = active;
     if (active) {
-        if (m_uiActive && !m_audioTimer.isActive()) {
-            m_audioTimer.start();
-        }
-        startAudioEvents();
         pollAudio();
-    } else {
-        stopAudioEvents();
     }
 }
 
 void SystemService::startAudioEvents()
 {
-    if (!m_volumePanelActive || m_audioEventProcess) {
+    if (m_audioEventProcess) {
         return;
     }
     const QString pactl = QStandardPaths::findExecutable(QStringLiteral("pactl"));
     if (pactl.isEmpty()) {
-        // No event source available: keep a modest fallback only while the
-        // volume page is visible.
-        m_audioTimer.setInterval(500);
+        // No event source available: fall back to timed polling while the
+        // HUD is active.
+        m_audioTimer.setInterval(3000);
         if (m_uiActive)
             m_audioTimer.start();
         return;
     }
 
-    // The subscription is the sole source while the panel is visible.
+    // One subscription for the whole lifetime keeps the capsule OSD and the
+    // open panel in sync with external volume changes without periodic polls.
     m_audioTimer.stop();
-    m_audioTimer.setInterval(3000);
     auto *process = new QProcess(this);
     m_audioEventProcess = process;
     m_audioEventBuffer.clear();
@@ -198,6 +192,7 @@ void SystemService::startAudioEvents()
             const QByteArray line = m_audioEventBuffer.left(newline);
             m_audioEventBuffer.remove(0, newline + 1);
             if (line.contains("on sink") || line.contains("on server")) {
+                m_audioEventPending = true;
                 m_audioEventPollTimer.start();
             }
         }
@@ -217,31 +212,12 @@ void SystemService::startAudioEvents()
                     m_audioEventProcess = nullptr;
                 }
                 process->deleteLater();
-                if (m_volumePanelActive) {
-                    m_audioTimer.setInterval(500);
-                    if (m_uiActive)
-                        m_audioTimer.start();
-                    QTimer::singleShot(1000, this, &SystemService::startAudioEvents);
-                }
+                m_audioTimer.setInterval(500);
+                if (m_uiActive)
+                    m_audioTimer.start();
+                QTimer::singleShot(1000, this, &SystemService::startAudioEvents);
             });
     process->start(pactl, {QStringLiteral("subscribe")});
-}
-
-void SystemService::stopAudioEvents()
-{
-    m_audioEventPollTimer.stop();
-    if (!m_audioEventProcess) {
-        m_audioTimer.setInterval(3000);
-        return;
-    }
-    QProcess *process = m_audioEventProcess;
-    m_audioEventProcess = nullptr;
-    process->terminate();
-    process->deleteLater();
-    m_audioEventBuffer.clear();
-    m_audioTimer.setInterval(3000);
-    if (m_uiActive)
-        m_audioTimer.start();
 }
 
 void SystemService::setUiActive(bool active)
@@ -249,7 +225,8 @@ void SystemService::setUiActive(bool active)
     m_uiActive = active;
 
     if (active) {
-        m_audioTimer.start();
+        if (!m_audioEventProcess)
+            m_audioTimer.start();
         m_netTimer.start();
         m_bluetoothTimer.start();
         m_batteryTimer.start();
@@ -262,7 +239,6 @@ void SystemService::setUiActive(bool active)
         m_netTimer.stop();
         m_bluetoothTimer.stop();
         m_batteryTimer.stop();
-        stopAudioEvents();
     }
 
     // Fill the first frame even while the bar starts collapsed; after this
@@ -328,7 +304,12 @@ void SystemService::pollAudio()
                         if (ok && value != m_volume) {
                             m_volume = qBound(0, value, 100);
                             Q_EMIT volumeChanged();
+                            if (m_audioEventPending) {
+                                m_audioEventPending = false;
+                                Q_EMIT volumeActivity(m_volume);
+                            }
                         }
+                        m_audioEventPending = false;
                     }
                     m_audioProcess = nullptr;
                     process->deleteLater();
@@ -353,11 +334,16 @@ void SystemService::pollAudio()
                         if (value != m_volume) {
                             m_volume = value;
                             Q_EMIT volumeChanged();
+                            if (m_audioEventPending) {
+                                m_audioEventPending = false;
+                                Q_EMIT volumeActivity(m_volume);
+                            }
                         }
                         if (muted != m_muted) {
                             m_muted = muted;
                             Q_EMIT mutedChanged();
                         }
+                        m_audioEventPending = false;
                     }
                 }
                 m_audioProcess = nullptr;
