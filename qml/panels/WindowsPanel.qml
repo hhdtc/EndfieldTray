@@ -97,15 +97,18 @@ BasePanel {
                 Column {
                     x: 47
                     anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - 100
+                    // Leave room for the FOCUS marker and the close button.
+                    width: parent.width - 166
                     spacing: 1
 
                     Text {
                         width: parent.width
                         text: row.title
                         color: row.active ? Theme.text : (row.minimized ? Theme.textFaint : Theme.textDim)
-                        font.family: Theme.cjk
-                        font.pixelSize: 12
+                        font.family: Theme.sans
+                        font.pixelSize: 13
+                        font.weight: Font.Medium
+                        font.letterSpacing: 0.2
                         elide: Text.ElideRight
                     }
 
