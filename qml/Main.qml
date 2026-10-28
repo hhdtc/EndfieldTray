@@ -54,6 +54,7 @@ QW.Window {
     property var groupWindows: []
     property string groupAppName: ""
     property int groupPopupGroup: -1
+    property string groupAppId: ""
     property real groupPopupX: 8
     readonly property int groupPopupWidth: 252
     readonly property int groupPopupHeight: 42 + Math.min(6, Math.max(1, groupWindows.length)) * 28
@@ -183,10 +184,11 @@ QW.Window {
             groupHideTimer.restart()
     }
 
-    function showGroup(groupIndex, windows, appName, item) {
+    function showGroup(groupIndex, windows, appName, appId, item) {
         if (!windows || windows.length <= 1)
             return
         groupPopupGroup = groupIndex
+        groupAppId = appId
         groupWindows = windows
         groupAppName = appName
         const point = item.mapToItem(bar, 0, 0)
@@ -197,6 +199,22 @@ QW.Window {
         groupHideTimer.stop()
         expandBar()
         updateInputRegion()
+    }
+
+    function refreshGroupPopup() {
+        if (!groupPopupVisible || groupAppId.length === 0)
+            return
+        for (let i = 0; i < RecentApps.count; ++i) {
+            const group = RecentApps.groupAt(i)
+            if (group.appId === groupAppId) {
+                groupPopupGroup = i
+                groupWindows = group.windows
+                groupAppName = group.appName
+                updateInputRegion()
+                return
+            }
+        }
+        hideGroup()
     }
 
     function globalX(item) {
@@ -516,6 +534,13 @@ QW.Window {
     }
 
 
+    Connections {
+        target: RecentApps
+        function onDataChanged() { root.refreshGroupPopup() }
+        function onModelReset() { root.refreshGroupPopup() }
+        function onCountChanged() { root.refreshGroupPopup() }
+    }
+
     Timer {
         id: capsuleOsdFadeInTimer
         interval: 150
@@ -802,7 +827,7 @@ QW.Window {
                         onClicked: RecentApps.activateGroup(index)
                         onHoveredChanged: hovered => {
                             if (hovered)
-                                root.showGroup(index, model.windows, model.appName, recentButton)
+                                root.showGroup(index, model.windows, model.appName, model.appId, recentButton)
                             else
                                 root.scheduleHideGroup()
                         }
