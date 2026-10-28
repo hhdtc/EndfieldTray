@@ -37,6 +37,7 @@ public:
     QHash<int, QByteArray> roleNames() const override;
 
     Q_INVOKABLE void activateWindow(int groupIndex, int windowIndex);
+    Q_INVOKABLE void activateGroup(int groupIndex);
     Q_INVOKABLE void bumpApp(const QString &appId);
     Q_INVOKABLE void setActive(bool active);
     Q_INVOKABLE QVariantMap groupAt(int groupIndex) const;
@@ -50,6 +51,7 @@ private:
         QString title;
         bool active = false;
         bool minimized = false;
+        qint64 lastActivated = 0;
     };
     struct Group {
         QString appId;

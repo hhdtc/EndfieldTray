@@ -12,8 +12,8 @@ Item {
     signal hoveredChanged(bool hovered)
     signal clicked()
 
-    width: 38
-    height: 32
+    width: 44
+    height: 36
 
     HoverHandler {
         id: hover
@@ -22,7 +22,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 9
+        radius: 10
         color: root.active ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.12)
                            : (hover.hovered ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.07) : "transparent")
         border.width: root.active ? 1 : 0
@@ -31,8 +31,8 @@ Item {
 
     Kirigami.Icon {
         anchors.centerIn: parent
-        width: 16
-        height: 16
+        width: 24
+        height: 24
         source: root.appIcon ? root.appIcon : "application-x-executable"
     }
 

@@ -87,6 +87,8 @@ QVariant WindowModel::data(const QModelIndex &index, int role) const
         return src.data(AbstractTasksModel::AppId).toString();
     case FullScreenRole:
         return src.data(AbstractTasksModel::IsFullScreen).toBool();
+    case LastActivatedRole:
+        return src.data(AbstractTasksModel::LastActivated);
     default:
         return QSortFilterProxyModel::data(index, role);
     }
@@ -104,6 +106,7 @@ QHash<int, QByteArray> WindowModel::roleNames() const
         {DesktopRole, "desktop"},
         {AppIdRole, "appId"},
         {FullScreenRole, "fullScreen"},
+        {LastActivatedRole, "lastActivated"},
     };
 }
 

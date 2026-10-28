@@ -31,6 +31,7 @@ public:
         DesktopRole,
         AppIdRole,
         FullScreenRole,
+        LastActivatedRole,
     };
     Q_ENUM(Role)
 

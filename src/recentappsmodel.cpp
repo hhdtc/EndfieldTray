@@ -152,6 +152,7 @@ void RecentAppsModel::rebuild()
         ref.title = index.data(WindowModel::TitleRole).toString();
         ref.active = index.data(WindowModel::ActiveRole).toBool();
         ref.minimized = index.data(WindowModel::MinimizedRole).toBool();
+        ref.lastActivated = index.data(WindowModel::LastActivatedRole).toLongLong();
         it->windows.append(ref);
         it->active = it->active || ref.active;
     }
@@ -176,6 +177,9 @@ void RecentAppsModel::rebuild()
         std::sort(group.windows.begin(), group.windows.end(), [](const WindowRef &a, const WindowRef &b) {
             if (a.active != b.active) {
                 return a.active;
+            }
+            if (a.lastActivated != b.lastActivated) {
+                return a.lastActivated > b.lastActivated;
             }
             return a.title.localeAwareCompare(b.title) < 0;
         });
@@ -223,6 +227,58 @@ void RecentAppsModel::activateWindow(int groupIndex, int windowIndex)
     }
     const WindowRef window = group.windows.at(windowIndex);
     m_windows->activate(window.row);
+    bumpApp(group.appId);
+}
+
+void RecentAppsModel::activateGroup(int groupIndex)
+{
+    if (groupIndex < 0 || groupIndex >= m_groups.size()) {
+        return;
+    }
+    const Group &group = m_groups.at(groupIndex);
+    if (group.windows.isEmpty()) {
+        return;
+    }
+
+    // Single window: focused -> minimize; otherwise restore/activate.
+    if (group.windows.size() == 1) {
+        const WindowRef &window = group.windows.constFirst();
+        if (window.active && !window.minimized) {
+            m_windows->toggleMinimize(window.row);
+        } else {
+            m_windows->activate(window.row);
+        }
+        bumpApp(group.appId);
+        return;
+    }
+
+    // Multiple windows: inactive group -> most recently used window.
+    // Active group -> cycle to the next window, like the KDE task manager.
+    int target = 0;
+    if (group.active) {
+        // Cycle through a stable order, not the active-first display order;
+        // otherwise a three-window group would only toggle between two.
+        QList<WindowRef> stable = group.windows;
+        std::sort(stable.begin(), stable.end(), [](const WindowRef &a, const WindowRef &b) {
+            return a.row < b.row;
+        });
+        int activeIndex = -1;
+        for (int i = 0; i < stable.size(); ++i) {
+            if (stable.at(i).active) {
+                activeIndex = i;
+                break;
+            }
+        }
+        if (activeIndex >= 0) {
+            target = (activeIndex + 1) % stable.size();
+            m_windows->activate(stable.at(target).row);
+        } else {
+            m_windows->activate(stable.constFirst().row);
+        }
+        bumpApp(group.appId);
+        return;
+    }
+    m_windows->activate(group.windows.at(target).row);
     bumpApp(group.appId);
 }
 

@@ -1,6 +1,6 @@
 # Endfield Tray
 
-![Version](https://img.shields.io/badge/version-0.1.18-C8CC4D?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.19-C8CC4D?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-KDE%20Plasma%206%20%2F%20Wayland-312F30?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-AEB23F?style=flat-square)
 

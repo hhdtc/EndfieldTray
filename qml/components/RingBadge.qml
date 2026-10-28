@@ -11,6 +11,7 @@ Item {
     property bool button: false
     property bool lit: false
     property string badgeText: ""
+    property real iconSize: 15
     property real startAngle: -Math.PI / 2
     property bool hovered: mouse.containsMouse
 
@@ -75,8 +76,8 @@ Item {
 
     IconGlyph {
         anchors.centerIn: parent
-        width: 15
-        height: 15
+        width: root.iconSize
+        height: root.iconSize
         name: root.icon
         charging: root.charging
         level: root.value

@@ -754,6 +754,7 @@ QW.Window {
             RingBadge {
                 id: windowsButton
                 icon: "windows"
+                iconSize: 18
                 button: true
                 badgeText: WindowModel.count > 0 ? String(WindowModel.count).padStart(2, "0") : ""
                 active: root.activePanel === "windows"
@@ -792,18 +793,13 @@ QW.Window {
                         required property var model
 
                         visible: index < 3
-                        width: visible ? 38 : 0
+                        width: visible ? 44 : 0
                         appName: model.appName
                         appIcon: model.icon
                         windowCount: model.windowCount
                         active: model.active
 
-                        onClicked: {
-                            if (model.windowCount === 1)
-                                RecentApps.activateWindow(index, 0)
-                            else
-                                root.showGroup(index, model.windows, model.appName, recentButton)
-                        }
+                        onClicked: RecentApps.activateGroup(index)
                         onHoveredChanged: hovered => {
                             if (hovered)
                                 root.showGroup(index, model.windows, model.appName, recentButton)
