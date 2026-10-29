@@ -699,6 +699,7 @@ QW.Window {
                     const vertical = Math.max(0, h - 2 * r)
                     const arc = Math.PI * r / 2
                     const total = 2 * straight + 2 * vertical + 4 * arc
+                    const halfTop = Math.max(0, w / 2 - r)
 
                     function drawPath(fraction, color) {
                         if (fraction <= 0)
@@ -724,8 +725,8 @@ QW.Window {
                         }
 
                         ctx.beginPath()
-                        ctx.moveTo(x + r, y)
-                        line(x + r, y, x + w - r, y)
+                        ctx.moveTo(x + w / 2, y)
+                        line(x + w / 2, y, x + w - r, y)
                         arcPart(x + w - r, y + r, -Math.PI / 2)
                         line(x + w, y + r, x + w, y + h - r)
                         arcPart(x + w - r, y + h - r, 0)
@@ -733,6 +734,7 @@ QW.Window {
                         arcPart(x + r, y + h - r, Math.PI / 2)
                         line(x, y + h - r, x, y + r)
                         arcPart(x + r, y + r, Math.PI)
+                        line(x + r, y, x + w / 2, y)
                         ctx.strokeStyle = color
                         ctx.lineWidth = lw
                         ctx.lineCap = "round"
