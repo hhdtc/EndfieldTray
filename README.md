@@ -1,6 +1,6 @@
 # Endfield Tray
 
-![Version](https://img.shields.io/badge/version-0.1.21-C8CC4D?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.22-C8CC4D?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-KDE%20Plasma%206%20%2F%20Wayland-312F30?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-AEB23F?style=flat-square)
 
@@ -104,6 +104,12 @@ Wi-Fi、音量、电池使用参考 HUD 的圆环进度；窗口、蓝牙和电�
 - 当前活动窗口进入全屏时，HUD 完全隐藏并清空输入区域；退出全屏后恢复为时间胶囊。
 - LayerShell scope 使用 `dock`，Show Desktop 不会把 HUD 一起隐藏。
 
+### 按住快捷键隐藏
+
+- 按住 `Meta+H` 时 HUD 完全隐藏并清空输入区域，松开立即恢复；适合临时看清桌面，或给窗口拖动 / 平铺让出底部空间。
+- 快捷键通过 KGlobalAccel 注册，可在 **系统设置 → 快捷键 → Endfield Tray → 按住隐藏 HUD** 中修改。
+- 没有做成“按住 Alt”：Wayland 不向普通客户端暴露全局修饰键状态，KDE 的 modifier-only 快捷键也只在松开时触发一次，无法判断 Alt 是否仍被按住；普通组合键可以分别收到按下和松开事件。
+
 ### 性能
 
 - 没有常驻扫描线、粒子或循环动画；收缩后暂停音频、网络、电池和托盘轮询。
@@ -179,12 +185,12 @@ Homebrew 只安装二进制和桌面文件；Qt、KDE Plasma、NetworkManager、
 sudo pacman -S --needed \
   base-devel cmake ninja \
   qt6-base qt6-declarative qt6-wayland \
-  layer-shell-qt plasma-workspace \
+  layer-shell-qt plasma-workspace kglobalaccel \
   networkmanager pipewire wireplumber \
   bluez-utils power-profiles-daemon glib2
 ```
 
-`plasma-workspace` 提供 `LibTaskManager` 和 Plasma 窗口任务接口；`pipewire` / `wireplumber` 提供 `wpctl` 和 `pactl` 的后端；`power-profiles-daemon` 提供电源模式。
+`plasma-workspace` 提供 `LibTaskManager` 和 Plasma 窗口任务接口，`kglobalaccel` 提供全局快捷键注册；`pipewire` / `wireplumber` 提供 `wpctl` 和 `pactl` 的后端；`power-profiles-daemon` 提供电源模式。
 
 ### 从源码构建
 
@@ -313,13 +319,14 @@ brew uninstall endfield-tray
 | 点击托盘抽屉 | 查看全部托盘项目 |
 | 点击左侧最近应用 | 激活；多窗口组悬停展开 |
 | `Esc` | 关闭当前面板 |
+| 按住 `Meta+H` | 暂时隐藏 HUD，松开恢复 |
 | 全屏窗口 | HUD 自动隐藏，退出全屏恢复 |
 
 音量、屏幕亮度和键盘亮度都有胶囊 OSD；改变后 2 秒恢复时间。
 
 ## 配置
 
-当前没有图形设置界面。主要常量位置：
+当前没有图形设置界面。唯一可以直接在系统设置里改的是隐藏快捷键：**系统设置 → 快捷键 → Endfield Tray → 按住隐藏 HUD**，默认 `Meta+H`。其余主要常量位置：
 
 | 内容 | 文件 |
 | --- | --- |
@@ -360,6 +367,7 @@ src/
   windowmodel.*       LibTaskManager -> 扁平窗口模型
   recentappsmodel.*   窗口按应用分组 / 最近使用
   inputregion.*       wl_surface 输入区域裁剪
+  holdshortcut.*      Meta+H 按住隐藏的 KGlobalAccel 快捷键
   traymodel.*         StatusNotifierItem host / 托盘项目
   traycontroller.*    DBusMenu 导入与菜单事件
   systemservice.*     Wi-Fi / 音频 / 电池 / 电源 / 亮度 / OSD 事件
@@ -418,6 +426,7 @@ GitHub Actions 会对 `master` 和版本 tag 构建发布二进制。
 - 没有图形设置界面；修改布局 / 颜色需要重新构建。
 - 托盘图标依赖应用提供的 `IconName` 或主题图标；只提供 pixmap 的应用会显示占位菱形。
 - 亮度 OSD 依赖 PowerDevil D-Bus；没有 PowerDevil 的环境不会显示亮度 OSD。
+- “按住 Alt 隐藏”在 Wayland 下无法由普通客户端实现：全局修饰键状态不开放，modifier-only 快捷键只在松开时触发一次。因此使用可配置的组合键（默认 `Meta+H`）实现按住即隐藏。
 - 音量 OSD 使用 `pactl subscribe`，HUD 运行期间会有一个小型 `pactl` helper 进程。
 - 没有“整条自动隐藏”选项；鼠标离开后收缩为时间胶囊，保留悬停入口。
 - 最大化窗口会延伸到悬浮条下方；LayerShell 不设置 strut，避免 KWin 把悬浮条整体上推。

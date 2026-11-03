@@ -71,7 +71,8 @@ QW.Window {
     property string capsuleOsdKind: "volume"
 
     readonly property real barWidth: barExpanded ? expandedWidth : collapsedWidth
-    readonly property bool hudHidden: WindowModel.fullScreenActive
+    // Fullscreen windows and the global hold shortcut both retract the HUD.
+    readonly property bool hudHidden: WindowModel.fullScreenActive || HoldShortcut.held
 
     onHudHiddenChanged: {
         if (hudHidden) {

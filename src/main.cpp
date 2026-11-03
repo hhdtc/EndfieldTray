@@ -1,4 +1,5 @@
 #include "autostart.h"
+#include "holdshortcut.h"
 #include "inputregion.h"
 #include "recentappsmodel.h"
 #include "systemservice.h"
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
     QGuiApplication app(argc, argv);
     QGuiApplication::setApplicationName(QStringLiteral("Endfield Tray"));
     QGuiApplication::setApplicationDisplayName(QStringLiteral("Endfield Tray"));
-    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.21"));
+    QGuiApplication::setApplicationVersion(QStringLiteral("0.1.22"));
     QGuiApplication::setOrganizationName(QStringLiteral("EndfieldTray"));
     QGuiApplication::setDesktopFileName(QStringLiteral("endfield-tray"));
 
@@ -118,6 +119,7 @@ int main(int argc, char **argv)
     TrayModel trayModel;
     SystemService systemService;
     InputRegion inputRegion;
+    HoldShortcut holdShortcut;
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("Theme"), &theme);
@@ -128,6 +130,7 @@ int main(int argc, char **argv)
     engine.rootContext()->setContextProperty(QStringLiteral("TrayModel"), &trayModel);
     engine.rootContext()->setContextProperty(QStringLiteral("System"), &systemService);
     engine.rootContext()->setContextProperty(QStringLiteral("InputRegion"), &inputRegion);
+    engine.rootContext()->setContextProperty(QStringLiteral("HoldShortcut"), &holdShortcut);
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed, &app,
                      [] { QCoreApplication::exit(1); }, Qt::QueuedConnection);

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(EndfieldTray VERSION 0.1.21 LANGUAGES CXX)
+project(EndfieldTray VERSION 0.1.22 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,6 +9,7 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.9 REQUIRED COMPONENTS Core Gui Qml Quick DBus WaylandClient)
 find_package(LayerShellQt REQUIRED)
+find_package(KF6GlobalAccel REQUIRED)
 find_package(LibTaskManager REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0)
@@ -61,6 +62,8 @@ qt_add_executable(endfield-tray
     src/systemservice.cpp
     src/inputregion.h
     src/inputregion.cpp
+    src/holdshortcut.h
+    src/holdshortcut.cpp
 )
 
 qt_add_qml_module(endfield-tray
@@ -100,6 +103,7 @@ target_link_libraries(endfield-tray PRIVATE
     Qt6::DBus
     Qt6::WaylandClient
     LayerShellQt::Interface
+    KF6::GlobalAccel
     PW::LibTaskManager
     PkgConfig::GIO
 )
